@@ -1,7 +1,15 @@
 class CozyException(Exception):
     def __init__(self, message):
-        pass
+        self.args = message
 
-class TwitchChannelNotFound(CozyException): pass
-class TwitchChannelAlreadySelected(CozyException): pass
-class TwitchChannelNotSelected(CozyException): pass
+class TwitchChannelNotFound(CozyException):
+    def __init__(self):
+        super().__init__("Channel not found.")
+
+class TwitchChannelAlreadySelected(CozyException):
+    def __init__(self):
+        super().__init__("Channel already selected.")
+
+class TwitchChannelNotSelected(CozyException):
+    def __init__(self):
+        super().__init__("Channel not selected.")

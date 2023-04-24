@@ -68,7 +68,9 @@ class StreamerDatabase:
     def __init__(self, streamer):
         self.streamer = streamer
     
-    def get_streamers(self): return database.select(f"SELECT `streamer` FROM `cozyfications`.`subscriptions`").value_all
+    @staticmethod
+    def get_streamers(): return database.select(f"SELECT `streamer` FROM `cozyfications`.`subscriptions`").value_all
+    
     def get_subids(self, guildid): return database.select(f"SELECT `subid` FROM `cozyfications`.`subscriptions` WHERE `streamer` = '{self.streamer}' AND guildid = '{guildid}'").value_all
     def get_guilds(self): return database.select(f"SELECT `guildid` FROM `cozyfications`.`subscriptions` WHERE `streamer` = '{self.streamer}'").value_all
 
@@ -81,6 +83,10 @@ class MessageDatabase:
         self.streamer = streamer
         self.channelid = channelid
     
-    def get_message(self): return database.select(f"SELECT `message` FROM `cozyfications`.`messages` WHERE guildid = '{self.guildid}' AND streamer = '{self.streamer}' AND channelid = '{self.channelid}'").value
-    def create_message(self, messageid): database.update(f"INSERT INTO `cozyfications`.`messages` (`messageid`, `guildid`, `streamer`, `channelid`) VALUES ('{messageid}', '{self.guildid}', '{self.streamer}', '{self.channelid}'")
-    def delete_message(self, messageid): database.update(f"DELETE FROM `cozyfications`.`messages` WHERE messageid = `{messageid}` AND guildid = `{self.guildid}` AND streamer = '{self.streamer}' AND channelid = '{self.channelid}'")
+    def get_message(self): return database.select(f"SELECT `messageid` FROM `cozyfications`.`messages` WHERE guildid = '{self.guildid}' AND streamer = '{self.streamer}' AND channelid = '{self.channelid}'").value
+    def exists(self) -> bool: return self.get_message() != None
+    def create_message(self, messageid):
+        if not self.exists():
+            return database.update(f"INSERT INTO `cozyfications`.`messages` (`messageid`, `guildid`, `streamer`, `channelid`) VALUES ('{messageid}', '{self.guildid}', '{self.streamer}', '{self.channelid}')")
+        return database.update(f"UPDATE `cozyfications`.`messages` SET `messageid` = '{messageid}' WHERE (`guildid` = '{self.guildid}' and `streamer` = '{self.streamer}' and `channelid` = '{self.channelid}')")
+    def delete_message(self, messageid): database.update(f"DELETE FROM `cozyfications`.`messages` WHERE `messageid` = '{messageid}' AND `guildid` = '{self.guildid}' AND `streamer` = '{self.streamer}' AND `channelid` = '{self.channelid}'")
