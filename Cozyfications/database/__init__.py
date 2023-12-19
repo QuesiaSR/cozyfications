@@ -8,9 +8,13 @@ schemas = [
 ]
 
 tables = [
-    "CREATE TABLE `cozyfications`.`twitch` (`guildid` BIGINT NOT NULL, `streamers` JSON NULL, `messages` JSON NULL, `channels` JSON NULL, PRIMARY KEY (`guildid`), UNIQUE INDEX `guildid_UNIQUE` (`guildid` ASC) VISIBLE)",
+    "CREATE TABLE `cozyfications`.`twitch` (`guildid` BIGINT NOT NULL, `streamers` JSON NULL, `message` TEXT, `channel` BIGINT, PRIMARY KEY (`guildid`), UNIQUE INDEX `guildid_UNIQUE` (`guildid` ASC) VISIBLE)",
     "CREATE TABLE `cozyfications`.`messages` (`messageid` BIGINT NOT NULL, `guildid` BIGINT NULL, `streamer` BIGINT NULL, `channelid` BIGINT NULL, PRIMARY KEY (`messageid`), UNIQUE INDEX `messageid_UNIQUE` (`messageid` ASC) VISIBLE)",
     "CREATE TABLE `cozyfications`.`subscriptions` (`streamer` BIGINT NOT NULL, `guildid` BIGINT NOT NULL, `subid` LONGTEXT NOT NULL)"
+]
+
+mutations = [
+    ""
 ]
 
 class Result:
@@ -22,7 +26,7 @@ class Result:
     def value(self):
         fetch = self._cur.fetchone()
         if not fetch == None and not fetch[0] == None:
-            if type(fetch[0]) == dict or type(fetch[0]) == list or (type(fetch[0]) == str and str(fetch[0])[0] in "{}[]"):
+            if type(fetch[0]) in [dict, list, tuple] or (type(fetch[0]) == str and str(fetch[0])[0] in "{}[]"):
                 return json.loads(fetch[0])
             else: return fetch[0]
         else: return None

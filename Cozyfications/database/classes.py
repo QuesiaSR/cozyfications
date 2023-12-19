@@ -11,6 +11,7 @@ class TwitchDatabase:
         streamers = self.get_streamers()
         if not self.exists(): database.update(f"INSERT INTO `cozyfications`.`twitch` (`guildid`, `streamers`) VALUES ('{self.guildid}', '[\"{streamer}\"]')")
         else:
+            streamers = [] if streamers is None else streamers
             streamers.append(streamer)
             streamers = str(streamers).replace("'", '"')
             database.update(f"UPDATE `cozyfications`.`twitch` SET `streamers` = '{streamers}' WHERE (`guildid` = '{self.guildid}')")
@@ -20,49 +21,21 @@ class TwitchDatabase:
         streamers = str(streamers).replace("'", '"')
         if streamers != None: database.update(f"UPDATE `cozyfications`.`twitch` SET `streamers` = '{streamers}' WHERE (`guildid` = '{self.guildid}')")
     
-    def get_messages(self): return database.select(f"SELECT `messages` FROM `cozyfications`.`twitch` WHERE guildid = '{self.guildid}'").value
-    def set_messages(self, live_message: str=None, clip_message: str=None):
-        messages = self.get_messages()
-        obj = {}
-        if not messages == None: obj = messages
-        if not live_message == None: obj["live"] = live_message
-        if not clip_message == None: obj["clip"] = clip_message
-        obj = str(obj).replace("'", '"')
-
-        if not self.exists(): database.update(f"INSERT INTO `cozyfications`.`twitch` (`guildid`, `messages`) VALUES ('{self.guildid}', '{obj}')")
-        else: database.update(f"UPDATE `cozyfications`.`twitch` SET `messages` = '{obj}' WHERE (`guildid` = '{self.guildid}')")
-    def remove_messages(self, live_message: bool=False, clip_message: bool=False):
-        messages = self.get_messages()
-        obj = {}
-        if not messages == None: obj = messages
-        if live_message and not obj.get("live") == None: obj.pop("live")
-        if clip_message and not obj.get("clip") == None: obj.pop("clip")
-        obj = str(obj).replace("'", '"')
-        
-        if not self.exists(): database.update(f"INSERT INTO `cozyfications`.`twitch` (`guildid`, `messages`) VALUES ('{self.guildid}', '{obj}')")
-        else: database.update(f"UPDATE `cozyfications`.`twitch` SET `messages` = '{obj}' WHERE (`guildid` = '{self.guildid}')")
+    def get_message(self): return database.select(f"SELECT `message` FROM `cozyfications`.`twitch` WHERE guildid = '{self.guildid}'").value
+    def set_message(self, message: str=None):
+        if not self.exists(): database.update(f"INSERT INTO `cozyfications`.`twitch` (`guildid`, `message`) VALUES ('{self.guildid}', '{message}')")
+        else: database.update(f"UPDATE `cozyfications`.`twitch` SET `message` = '{message}' WHERE (`guildid` = '{self.guildid}')")
+    def remove_message(self):
+        if self.exists():
+            database.update(f"UPDATE `cozyfications`.`twitch` SET `message` = '{None}' WHERE (`guildid` = '{self.guildid}')")
     
-    def get_channels(self): return database.select(f"SELECT `channels` FROM `cozyfications`.`twitch` WHERE guildid = '{self.guildid}'").value
-    def set_channels(self, live_channel: str=None, clip_channel: str=None):
-        channels = self.get_channels()
-        obj = {}
-        if not channels == None: obj = channels
-        if not live_channel == None: obj["live"] = live_channel
-        if not clip_channel == None: obj["clip"] = clip_channel
-        obj = str(obj).replace("'", '"')
-
-        if not self.exists(): database.update(f"INSERT INTO `cozyfications`.`twitch` (`guildid`, `channels`) VALUES ('{self.guildid}', '{obj}')")
-        else: database.update(f"UPDATE `cozyfications`.`twitch` SET `channels` = '{obj}' WHERE (`guildid` = '{self.guildid}')")
-    def remove_channels(self, live_channel: bool=False, clip_channel: bool=False):
-        channels = self.get_channels()
-        obj = {}
-        if not channels == None: obj = channels
-        if live_channel and not obj.get("live") == None: obj.pop("live")
-        if clip_channel and not obj.get("clip") == None: obj.pop("clip")
-        obj = str(obj).replace("'", '"')
-
-        if not self.exists(): database.update(f"INSERT INTO `cozyfications`.`twitch` (`guildid`, `channels`) VALUES ('{self.guildid}', '{obj}')")
-        else: database.update(f"UPDATE `cozyfications`.`twitch` SET `channels` = '{obj}' WHERE (`guildid` = '{self.guildid}')")
+    def get_channel(self): return database.select(f"SELECT `channel` FROM `cozyfications`.`twitch` WHERE guildid = '{self.guildid}'").value
+    def set_channel(self, channel: int=None):
+        if not self.exists(): database.update(f"INSERT INTO `cozyfications`.`twitch` (`guildid`, `channel`) VALUES ('{self.guildid}', '{channel}')")
+        else: database.update(f"UPDATE `cozyfications`.`twitch` SET `channel` = '{channel}' WHERE (`guildid` = '{self.guildid}')")
+    def remove_channel(self):
+        if self.exists():
+            database.update(f"UPDATE `cozyfications`.`twitch` SET `channel` = '{None}' WHERE (`guildid` = '{self.guildid}')")
 
 class StreamerDatabase:
     def __init__(self, streamer):

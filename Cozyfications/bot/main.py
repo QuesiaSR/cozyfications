@@ -4,8 +4,8 @@ from discord import ApplicationContext, commands, AutoShardedBot
 from discord.errors import NotFound, Forbidden, HTTPException
 from Cozyfications.bot.ui import views
 from Cozyfications.database.classes import StreamerDatabase, TwitchDatabase, MessageDatabase
-from Cozyfications.secrets import Twitch
-from twitchAPI import EventSub, Twitch as TwitchAPI
+from Cozyfications.secrets import Twitch, Ngrok
+from twitchAPI import EventSub, Twitch as TwitchAPI, EventSubSubscriptionConflict
 from pyngrok import ngrok
 
 class Callbacks:
@@ -27,14 +27,14 @@ class Callbacks:
 
             for guild in guilds:
                 guild: TwitchDatabase
-                channels = guild.get_channels()
+                channel = guild.get_channel()
 
-                if channels != None and channels["live"] != None:
-                    msgdb = MessageDatabase(guild.guildid, data["subscription"]["condition"]["broadcaster_user_id"], channels["live"])
+                if not channel is None:
+                    msgdb = MessageDatabase(guild.guildid, data["subscription"]["condition"]["broadcaster_user_id"], channel)
                     msgid = msgdb.get_message()
 
                     if msgid != None:
-                        sent = await bot.get_channel(int(channels["live"])).fetch_message(int(msgid))
+                        sent = await bot.get_channel(channel).fetch_message(int(msgid))
                         if sent != None:
                             await sent.edit("Updated.")
                         else: print("no msg")
@@ -49,17 +49,15 @@ class Callbacks:
 
             for guild in guilds:
                 guild: TwitchDatabase
-                channels = guild.get_channels()
+                channel = guild.get_channel()
 
-                if channels != None and channels["live"] != None:
-                    channel = bot.get_channel(int(channels["live"]))
-                    messages = guild.get_messages()
-                    message = "Online."
-                    if messages != None and messages["live"] != None:
-                        message = messages["live"]
+                if not channel is None:
+                    channel = bot.get_channel(channel)
+                    message = guild.get_message()
+                    message = "Online." if message is None else message
 
                     sent = await channel.send(message)
-                    msgdb = MessageDatabase(guild.guildid, data["subscription"]["condition"]["broadcaster_user_id"], channels["live"])
+                    msgdb = MessageDatabase(guild.guildid, data["subscription"]["condition"]["broadcaster_user_id"], channel)
                     msgdb.create_message(sent.id)
         Cozyfications.QUEUE.append({"data": data, "callback": callback})
                 
@@ -70,18 +68,15 @@ class Callbacks:
 
             for guild in guilds:
                 guild: TwitchDatabase
-                channels = guild.get_channels()
+                channel = guild.get_channel()
 
-                if channels != None and channels["live"] != None:
-                    messages = guild.get_messages()
+                if not channel is None:
                     message = "Offline."
-                    if messages != None and messages["live"] != None:
-                        message = messages["live"]
-                    
-                    msgdb = MessageDatabase(guild.guildid, data["subscription"]["condition"]["broadcaster_user_id"], channels["live"])
+
+                    msgdb = MessageDatabase(guild.guildid, data["subscription"]["condition"]["broadcaster_user_id"], channel)
                     msgid = msgdb.get_message()
                     
-                    channel = bot.get_channel(int(channels["live"]))
+                    channel = bot.get_channel(channel)
                     if msgid != None:
                         msgdb.delete_message(msgid)
                         try:
@@ -122,7 +117,7 @@ class Cozyfications(AutoShardedBot):
             case_insensitive=True,
             allowed_mentions=discord.AllowedMentions(everyone=False),
             owner_ids=[810863994985250836],
-            debug_guilds=[1018128160962904114, 880116563351584798]
+            debug_guilds=[1018128160962904114]
         )
 
         @commands.slash_command(name="reload", description="Reload the cogs.")
@@ -151,6 +146,7 @@ class Cozyfications(AutoShardedBot):
                     self.load_cogs(file)
 
     async def run_server(self) -> None:
+        ngrok.set_auth_token(Ngrok.TOKEN)
         ngrok.connect(self.port)
         tunnels = ngrok.get_tunnels()
         self.url = tunnels[1].public_url if tunnels[1].public_url.startswith("https://") else tunnels[0].public_url
@@ -160,8 +156,10 @@ class Cozyfications(AutoShardedBot):
         if self.hook != None:
             self.new_subscriptions += 1
             for subscription in self.subscriptions:
-                subid = self.hook._subscribe(subscription, "1", {"broadcaster_user_id": str(user)}, self.subscriptions[subscription])
-                StreamerDatabase(user).add_guild(guildid, subid)
+                try:
+                    subid = self.hook._subscribe(subscription, "1", {"broadcaster_user_id": str(user)}, self.subscriptions[subscription])
+                    StreamerDatabase(user).add_guild(guildid, subid)
+                except EventSubSubscriptionConflict: pass
 
     async def unsubscribe(self, user, guildid) -> None:
         if self.ttv != None:

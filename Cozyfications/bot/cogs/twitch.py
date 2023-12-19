@@ -14,8 +14,6 @@ class Twitch(commands.Cog):
 
     group = SlashCommandGroup("twitch", "Manage your server's Twitch settings.")
     streamer = group.create_subgroup("streamer", "Manage the selected streamers.")
-    message = group.create_subgroup("message", "Manage the various message types.")
-    channel = group.create_subgroup("channel", "Manage the various channel types.")
 
     @streamer.command(name="add", description="Add a streamer you want to receive notifications from.")
     async def s_add(self, ctx: ApplicationContext, user: Option(str, description="The streamer's username.")):
@@ -55,12 +53,12 @@ class Twitch(commands.Cog):
         db.remove_streamer(userid)
         return await ctx.followup.send(f"`{user.lower()}` has been removed from the list. :(", delete_after=30)
 
-    @message.command(name="live", description="Manage the message that's sent when a streamer goes live.")
-    async def l_m_set(self, ctx: ApplicationContext, message: Option(str, description="The message", required=False)):
+    @group.command(name="message", description="Manage the message that's sent when a streamer goes live.")
+    async def m_set(self, ctx: ApplicationContext, message: Option(str, description="The message", required=False)):
         await ctx.defer()
         db = TwitchDatabase(ctx.guild.id)
         if message:
-            db.set_messages(live_message=message)
+            db.set_message(message)
             return await ctx.followup.send(f"The live message has been updated! 🎉", delete_after=30)
         
         dialog = views.ConfirmDialog()
@@ -69,38 +67,18 @@ class Twitch(commands.Cog):
         await dialog.wait()
 
         if dialog.value:
-            db.remove_messages(live_message=True)
+            db.remove_message()
             return await ctx.followup.send("The live message has been removed. :(", delete_after=30)
 
         elif not dialog.value: return await ctx.followup.send("Removal has been cancelled.", delete_after=30)
         else: return await ctx.followup.send("Dialog timed out.", delete_after=30)
     
-    @message.command(name="clip", description="Manage the message that's sent when a streamer creates a new clip.")
-    async def c_m_set(self, ctx: ApplicationContext, message: Option(str, description="The message.", required=False)):
-        await ctx.defer()
-        db = TwitchDatabase(ctx.guild.id)
-        if message:
-            db.set_messages(clip_message=message)
-            return await ctx.followup.send(f"The clip message has been updated! 🎉", delete_after=30)
-        
-        dialog = views.ConfirmDialog()
-
-        await ctx.reply("Are you sure you want to remove the clip message?", view=dialog)
-        await dialog.wait()
-
-        if dialog.value:
-            db.remove_messages(clip_message=True)
-            return await ctx.followup.send("The clip message has been removed. :(", delete_after=30)
-
-        elif not dialog.value: return await ctx.followup.send("Removal has been cancelled.", delete_after=30)
-        else: return await ctx.followup.send("Dialog timed out.", delete_after=30)
-    
-    @channel.command(name="live", description="Manage the Discord channel where the message is sent when a streamer goes live.")
-    async def l_c_set(self, ctx: ApplicationContext, channel: Option(discord.TextChannel, description="The channel.", required=False)):
+    @group.command(name="channel", description="Manage the Discord channel where the message is sent when a streamer goes live.")
+    async def c_set(self, ctx: ApplicationContext, channel: Option(discord.TextChannel, description="The channel.", required=False)):
         await ctx.defer()
         db = TwitchDatabase(ctx.guild.id)
         if channel:
-            db.set_channels(live_channel=str(channel.id))
+            db.set_channel(channel.id)
             return await ctx.followup.send(f"The live channel has been updated! 🎉", delete_after=30)
 
         dialog = views.ConfirmDialog()
@@ -109,28 +87,8 @@ class Twitch(commands.Cog):
         await dialog.wait()
 
         if dialog.value:
-            db.remove_channels(live_channel=True)
+            db.remove_channel()
             return await ctx.followup.send("The live channel has been removed. :(", delete_after=30)
-
-        elif not dialog.value: return await ctx.followup.send("Removal has been cancelled.", delete_after=30)
-        else: return await ctx.followup.send("Dialog timed out.", delete_after=30)
-    
-    @channel.command(name="clip", description="Manage the Discord channel where the message is sent when a streamer goes creates a new clip.")
-    async def c_c_set(self, ctx: ApplicationContext, channel: Option(discord.TextChannel, description="The channel.", required=False)):
-        await ctx.defer()
-        db = TwitchDatabase(ctx.guild.id)
-        if channel:
-            db.set_channels(clip_channel=str(channel.id))
-            return await ctx.followup.send(f"The clip channel has been updated! 🎉", delete_after=30)
-        
-        dialog = views.ConfirmDialog()
-
-        await ctx.reply("Are you sure you want to remove the clip channel?", view=dialog)
-        await dialog.wait()
-
-        if dialog.value:
-            db.remove_channels(clip_channel=True)
-            return await ctx.followup.send("The clip channel has been removed. :(", delete_after=30)
 
         elif not dialog.value: return await ctx.followup.send("Removal has been cancelled.", delete_after=30)
         else: return await ctx.followup.send("Dialog timed out.", delete_after=30)
