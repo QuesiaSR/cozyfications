@@ -11,25 +11,25 @@ schemas = [
 
 tables = [
     """CREATE TABLE `cozyfications`.`twitch` (
-        `guildid` BIGINT NOT NULL,
+        `guild_id` BIGINT NOT NULL,
         `streamers` JSON NULL,
         `message` TEXT,
         `channel` BIGINT,
-        PRIMARY KEY (`guildid`),
-        UNIQUE INDEX `guildid_UNIQUE` (`guildid` ASC) VISIBLE
+        PRIMARY KEY (`guild_id`),
+        UNIQUE INDEX `guild_id_UNIQUE` (`guild_id` ASC) VISIBLE
     )""",
     """CREATE TABLE `cozyfications`.`messages` (
-        `messageid` BIGINT NOT NULL,
-        `guildid` BIGINT NULL,
+        `message_id` BIGINT NOT NULL,
+        `guild_id` BIGINT NULL,
         `streamer` BIGINT NULL,
-        `channelid` BIGINT NULL,
-        PRIMARY KEY (`messageid`),
-        UNIQUE INDEX `messageid_UNIQUE` (`messageid` ASC) VISIBLE
+        `channel_id` BIGINT NULL,
+        PRIMARY KEY (`message_id`),
+        UNIQUE INDEX `message_id_UNIQUE` (`message_id` ASC) VISIBLE
     )""",
     """CREATE TABLE `cozyfications`.`subscriptions` (
         `streamer` BIGINT NOT NULL,
-        `guildid` BIGINT NOT NULL,
-        `subid` LONGTEXT NOT NULL
+        `guild_id` BIGINT NOT NULL,
+        `subscription_id` LONGTEXT NOT NULL
     )"""
 ]
 
@@ -54,10 +54,10 @@ class Result:
     def value_all_raw(self):
         fetch = self._cur.fetchall()
         if fetch is not None:
-            ret = []
+            return_dict = []
             for i in fetch:
-                ret.append(i[0])
-            return ret
+                return_dict.append(i[0])
+            return return_dict
         else:
             return None
 
@@ -65,11 +65,11 @@ class Result:
     def value_all(self):
         fetch = self.value_all_raw
         if fetch is not None:
-            ret = []
+            return_dict = []
             for i in fetch:
-                if i not in ret:
-                    ret.append(i)
-            return ret
+                if i not in return_dict:
+                    return_dict.append(i)
+            return return_dict
         else:
             return None
 
@@ -136,13 +136,13 @@ def update(q):
     del cur
 
 
-def delete(table, guildid):
+def delete(table, guild_id):
     db = connect()
     cur = cursor(db)
 
     cur.execute(
         f"""DELETE FROM `{table}`
-        WHERE guildid = `{guildid}`"""
+        WHERE guild_id = `{guild_id}`"""
     )
     db.commit()
     cur.close()

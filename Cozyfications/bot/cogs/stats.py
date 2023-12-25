@@ -28,7 +28,7 @@ class Stats(Cog):
         )
         embed.add_field(
             name="Deleted Subscriptions:",
-            value=f"`{self.bot.del_subscriptions}`",
+            value=f"`{self.bot.delete_subscriptions}`",
             inline=False
         )
         embed.add_field(

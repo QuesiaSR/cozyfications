@@ -1,7 +1,7 @@
+import os
 from datetime import datetime
 
 import discord
-import os
 from discord import ApplicationContext, commands, AutoShardedBot
 from discord.errors import NotFound, Forbidden, HTTPException
 from pyngrok import ngrok
@@ -15,14 +15,14 @@ from Cozyfications.secrets import Twitch
 class Callbacks:
     async def get_guilds(self, data):
         streamer = data["subscription"]["condition"]["broadcaster_user_id"]
-        strdb = StreamerDatabase(streamer)
-        guilds = strdb.get_guilds()
+        streamer_db = StreamerDatabase(streamer)
+        guilds = streamer_db.get_guilds()
 
-        ret = []
+        return_dict = []
 
         for guild in guilds:
-            ret.append(TwitchDatabase(guild))
-        return ret
+            return_dict.append(TwitchDatabase(guild))
+        return return_dict
 
     async def update(self, data):
         print("update")
@@ -35,18 +35,18 @@ class Callbacks:
                 channel = guild.get_channel()
 
                 if channel is not None:
-                    msgdb = MessageDatabase(guild.guildid, data["subscription"]["condition"]["broadcaster_user_id"],
-                                            channel)
-                    msgid = msgdb.get_message()
+                    msg_db = MessageDatabase(guild.guild_id, data["subscription"]["condition"]["broadcaster_user_id"],
+                                             channel)
+                    msg_id = msg_db.get_message()
 
-                    if msgid is not None:
-                        sent = await bot.get_channel(channel).fetch_message(int(msgid))
+                    if msg_id is not None:
+                        sent = await bot.get_channel(channel).fetch_message(int(msg_id))
                         if sent is not None:
                             await sent.edit("Updated.")
                         else:
                             print("no msg")
                     else:
-                        print("no msgid")
+                        print("no msg_id")
                 else:
                     print("no channels")
 
@@ -68,9 +68,9 @@ class Callbacks:
                     message = "Online." if message is None else message
 
                     sent = await channel.send(message)
-                    msgdb = MessageDatabase(guild.guildid, data["subscription"]["condition"]["broadcaster_user_id"],
-                                            channel)
-                    msgdb.create_message(sent.id)
+                    msg_db = MessageDatabase(guild.guild_id, data["subscription"]["condition"]["broadcaster_user_id"],
+                                             channel)
+                    msg_db.create_message(sent.id)
 
         Cozyfications.QUEUE.append({"data": data, "callback": callback})
 
@@ -87,15 +87,15 @@ class Callbacks:
                 if channel is not None:
                     message = "Offline."
 
-                    msgdb = MessageDatabase(guild.guildid, data["subscription"]["condition"]["broadcaster_user_id"],
-                                            channel)
-                    msgid = msgdb.get_message()
+                    msg_db = MessageDatabase(guild.guild_id, data["subscription"]["condition"]["broadcaster_user_id"],
+                                             channel)
+                    msg_id = msg_db.get_message()
 
                     channel = bot.get_channel(channel)
-                    if msgid is not None:
-                        msgdb.delete_message(msgid)
+                    if msg_id is not None:
+                        msg_db.delete_message(msg_id)
                         try:
-                            sent = await channel.fetch_message(int(msgid))
+                            sent = await channel.fetch_message(int(msg_id))
                             if sent is not None:
                                 return await sent.edit(message)
                         except NotFound | Forbidden | HTTPException:
@@ -117,7 +117,7 @@ class Cozyfications(AutoShardedBot):
         self.path = "./Cozyfications/bot/cogs"
 
         self.new_subscriptions = 0
-        self.del_subscriptions = 0
+        self.delete_subscriptions = 0
         self.subscriptions = {
             "channel.update": Callbacks.update,
             "stream.online": Callbacks.online,
@@ -172,25 +172,25 @@ class Cozyfications(AutoShardedBot):
         self.url = tunnels[1].public_url if tunnels[1].public_url.startswith("https://") else tunnels[0].public_url
         print(f"  Started ngrok server at '{self.url}'")
 
-    async def subscribe(self, user, guildid) -> None:
+    async def subscribe(self, user, guild_id) -> None:
         if self.hook is not None:
             self.new_subscriptions += 1
             for subscription in self.subscriptions:
                 try:
-                    subid = self.hook._subscribe(subscription, "1", {"broadcaster_user_id": str(user)},
+                    sub_id = self.hook._subscribe(subscription, "1", {"broadcaster_user_id": str(user)},
                                                  self.subscriptions[subscription])
-                    StreamerDatabase(user).add_guild(guildid, subid)
+                    StreamerDatabase(user).add_guild(guild_id, sub_id)
                 except EventSubSubscriptionConflict:
                     pass
 
-    async def unsubscribe(self, user, guildid) -> None:
+    async def unsubscribe(self, user, guild_id) -> None:
         if self.ttv is not None:
-            self.del_subscriptions += 1
-            strdb = StreamerDatabase(user)
-            subids = strdb.get_subids(guildid)
-            for subid in subids:
-                self.ttv.delete_eventsub_subscription(subid)
-            strdb.remove_guild(guildid)
+            self.delete_subscriptions += 1
+            streamer_db = StreamerDatabase(user)
+            subscription_ids = streamer_db.get_subscription_ids(guild_id)
+            for subscription_id in subscription_ids:
+                self.ttv.delete_eventsub_subscription(subscription_id)
+            streamer_db.remove_guild(guild_id)
 
     async def run_event_hook(self):
         self.ttv = TwitchAPI(Twitch.ID, Twitch.SECRET)
