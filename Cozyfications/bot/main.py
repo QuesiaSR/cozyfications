@@ -146,7 +146,7 @@ class Cozyfications(AutoShardedBot):
                     self.load_cogs(file)
 
     async def run_server(self) -> None:
-        ngrok.set_auth_token(Ngrok.TOKEN)
+        ngrok.update()
         ngrok.connect(self.port)
         tunnels = ngrok.get_tunnels()
         self.url = tunnels[1].public_url if tunnels[1].public_url.startswith("https://") else tunnels[0].public_url

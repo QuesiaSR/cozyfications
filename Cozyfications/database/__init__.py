@@ -13,10 +13,6 @@ tables = [
     "CREATE TABLE `cozyfications`.`subscriptions` (`streamer` BIGINT NOT NULL, `guildid` BIGINT NOT NULL, `subid` LONGTEXT NOT NULL)"
 ]
 
-mutations = [
-    ""
-]
-
 class Result:
     def __init__(self, cursor: MySQLCursorAbstract):
         self._cur = cursor
