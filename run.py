@@ -1,5 +1,5 @@
-from Cozyfications.bot import main
 from Cozyfications import database, secrets
+from Cozyfications.bot import main
 
 if __name__ == "__main__":
     database.create()
