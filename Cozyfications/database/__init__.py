@@ -52,26 +52,14 @@ class Result:
 
     @property
     def value_all_raw(self):
-        fetch = self._cur.fetchall()
-        if fetch is not None:
-            return_dict = []
-            for i in fetch:
-                return_dict.append(i[0])
-            return return_dict
-        else:
-            return None
+        return self._cur.fetchall()
 
     @property
     def value_all(self):
-        fetch = self.value_all_raw
-        if fetch is not None:
-            return_dict = []
-            for i in fetch:
-                if i not in return_dict:
-                    return_dict.append(i)
-            return return_dict
-        else:
-            return None
+        fetch = self._cur.fetchall()
+        if not fetch is None:
+            return [i[0] if len(i) == 1 else list(i) for i in fetch]
+        return []
 
 
 def connect():
