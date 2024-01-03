@@ -6,7 +6,7 @@ from Cozyfications.errors import *
 
 
 class Twitch(core.Cog):
-    """Manage your server's Twitch Cozyfication settings."""
+    """Manage your server's Twitch Cozyfication settings!"""
 
     def __init__(self, bot: core.Cozyfications):
         self.bot = bot
