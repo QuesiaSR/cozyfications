@@ -1,26 +1,40 @@
 import discord
-from discord import ApplicationContext
-from discord.commands import SlashCommandGroup, Option
-from discord.ext import commands
 
-from Cozyfications.bot.main import Cozyfications
-from Cozyfications.bot.ui import views
+from Cozyfications.bot import core
 from Cozyfications.database.classes import TwitchDatabase
 from Cozyfications.errors import *
 
 
-class Twitch(commands.Cog):
-    def __init__(self, bot: Cozyfications):
+class Twitch(core.Cog):
+    """Manage your server's Twitch Cozyfication settings."""
+
+    def __init__(self, bot: core.Cozyfications):
         self.bot = bot
-        self.twitch = self.bot.ttv
+        # TODO: Fix Twitch API
+        #  self.twitch = self.bot.ttv
 
-    group = SlashCommandGroup("twitch", "Manage your server's Twitch settings.")
-    streamer = group.create_subgroup("streamer", "Manage the selected streamers.")
+    twitch_group = discord.SlashCommandGroup(
+        name="twitch",
+        description="Manage your server's Twitch settings!"
+    )
+    streamer_group = twitch_group.create_subgroup(
+        name="directory",
+        description="Manage the selected streamers!",
+    )
 
-    @streamer.command(name="add", description="Add a streamer you want to receive notifications from.")
-    async def s_add(self, ctx: ApplicationContext, user: Option(str, description="The streamer's username.")):
+    @streamer_group.command(name="add", description="Add a streamer you want to receive notifications from.")
+    async def add_streamer(self, ctx: discord.ApplicationContext,
+                           user: discord.Option(str, description="The streamer's username.", required=True)):
+        """Add a streamer you want to receive notifications from.
+
+        Parameters
+        ------------
+        ctx: discord.ApplicationContext
+            The context used for command invocation.
+        user: str
+            The streamer's username."""
         await ctx.defer()
-        db = TwitchDatabase(ctx.guild.id)
+        db: TwitchDatabase = TwitchDatabase(ctx.guild.id)
         fetch = self.twitch.get_users(logins=[user.lower()])
 
         if len(fetch["data"]) <= 0 or not fetch["data"][0]["login"].lower() == user.lower():
@@ -34,12 +48,25 @@ class Twitch(commands.Cog):
 
         await self.bot.subscribe(userid, ctx.guild.id)
         db.add_streamer(userid)
-        await ctx.followup.send(f"`{user.lower()}` has been added as a streamer! 🎉", delete_after=30)
+        await ctx.followup.send(
+            content=f"`{user.lower()}` has been added as a streamer! 🎉",
+            ephemeral=True
+        )
 
-    @streamer.command(name="remove", description="Remove a streamer you no longer want to receive notifications from.")
-    async def s_remove(self, ctx: ApplicationContext, user: Option(str, description="The streamer's username.")):
+    @streamer_group.command(name="remove",
+                            description="Remove a streamer you no longer want to receive notifications from!")
+    async def s_remove(self, ctx: discord.ApplicationContext,
+                       user: discord.Option(str, description="The streamer's username.", required=True)):
+        """Remove a streamer you no longer want to receive notifications from.
+
+        Parameters
+        ------------
+        ctx: discord.ApplicationContext
+            The context used for command invocation.
+        user: str
+            The streamer's username."""
         await ctx.defer()
-        db = TwitchDatabase(ctx.guild.id)
+        db: TwitchDatabase = TwitchDatabase(ctx.guild.id)
         fetch = self.twitch.get_users(logins=[user.lower()])
 
         if len(fetch["data"]) <= 0 or not fetch["data"][0]["login"].lower() == user.lower():
@@ -53,53 +80,111 @@ class Twitch(commands.Cog):
 
         await self.bot.unsubscribe(userid, ctx.guild.id)
         db.remove_streamer(userid)
-        return await ctx.followup.send(f"`{user.lower()}` has been removed from the list. :(", delete_after=30)
+        return await ctx.followup.send(
+            content=f"`{user.lower()}` has been removed from the list. :(",
+            ephemeral=True
+        )
 
-    @group.command(name="message", description="Manage the message that's sent when a streamer goes live.")
-    async def m_set(self, ctx: ApplicationContext, message: Option(str, description="The message", required=False)):
+    set_group = twitch_group.create_subgroup(
+        name="set",
+        description="Manage the settings for your server's Twitch Cozyfication",
+    )
+
+    @set_group.command(name="message", description="Manage the message that's sent when a streamer goes live.")
+    async def set_message(self, ctx: discord.ApplicationContext,
+                          message: discord.Option(str, description="The message for Cozyfications", required=False)):
+        """Manage the message that's sent when a streamer goes live.
+
+        Parameters
+        ------------
+        ctx: discord.ApplicationContext
+            The context used for command invocation.
+        message: str
+            The message to send when a streamer goes live."""
         await ctx.defer()
-        db = TwitchDatabase(ctx.guild.id)
+        db: TwitchDatabase = TwitchDatabase(ctx.guild.id)
         if message:
             db.set_message(message)
-            return await ctx.followup.send(f"The live message has been updated! 🎉", delete_after=30)
+            return await ctx.followup.send(
+                content=f"The live message has been updated! 🎉",
+                ephemeral=True
+            )
 
-        dialog = views.ConfirmDialog()
+        dialog = core.views.ConfirmDialog()
 
-        await ctx.reply("Are you sure you want to remove the live message?", view=dialog)
+        await ctx.followup.send(
+            content="Are you sure you want to remove the live message?",
+            view=dialog,
+            ephemeral=True
+        )
         await dialog.wait()
 
         if dialog.value:
             db.remove_message()
-            return await ctx.followup.send("The live message has been removed. :(", delete_after=30)
+            return await ctx.followup.send(
+                content="The live message has been removed. :(",
+                ephemeral=True
+            )
 
         elif not dialog.value:
-            return await ctx.followup.send("Removal has been cancelled.", delete_after=30)
+            return await ctx.followup.send(
+                content="Removal has been cancelled.",
+                ephemeral=True
+            )
         else:
-            return await ctx.followup.send("Dialog timed out.", delete_after=30)
+            return await ctx.followup.send(
+                content="Dialog timed out.",
+                ephemeral=True
+            )
 
-    @group.command(name="channel",
-                   description="Manage the Discord channel where the message is sent when a streamer goes live.")
-    async def c_set(self, ctx: ApplicationContext,
-                    channel: Option(discord.TextChannel, description="The channel.", required=False)):
+    @set_group.command(name="channel",
+                       description="Manage the Discord channel where the message is sent when a streamer goes live.")
+    async def set_channel(self, ctx: discord.ApplicationContext,
+                          channel: discord.Option(discord.TextChannel, description="The channel for Cozyfications.",
+                                                  required=False)):
+        """Manage the Discord channel where the message is sent when a streamer goes live.
+
+        Parameters
+        ------------
+        ctx: discord.ApplicationContext
+            The context used for command invocation.
+        channel: discord.TextChannel
+            The channel where the message is sent when a streamer goes live."""
         await ctx.defer()
         db = TwitchDatabase(ctx.guild.id)
         if channel:
             db.set_channel(channel.id)
-            return await ctx.followup.send(f"The live channel has been updated! 🎉", delete_after=30)
+            return await ctx.followup.send(
+                content="The live channel has been updated! 🎉",
+                ephemeral=True
+            )
 
-        dialog = views.ConfirmDialog()
+        dialog = core.views.ConfirmDialog()
 
-        await ctx.reply("Are you sure you want to remove the live channel?", view=dialog)
+        await ctx.followup.send(
+            content="Are you sure you want to remove the live channel?",
+            view=dialog,
+            ephemeral=True
+        )
         await dialog.wait()
 
         if dialog.value:
             db.remove_channel()
-            return await ctx.followup.send("The live channel has been removed. :(", delete_after=30)
+            return await ctx.followup.send(
+                content="The live channel has been removed. :(",
+                ephemeral=True
+            )
 
         elif not dialog.value:
-            return await ctx.followup.send("Removal has been cancelled.", delete_after=30)
+            return await ctx.followup.send(
+                content="Removal has been cancelled.",
+                ephemeral=True
+            )
         else:
-            return await ctx.followup.send("Dialog timed out.", delete_after=30)
+            return await ctx.followup.send(
+                content="Dialog timed out.",
+                ephemeral=True
+            )
 
 
 def setup(bot):

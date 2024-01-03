@@ -1,17 +1,18 @@
 from discord.ext import tasks
-from discord.ext.commands import Cog
 
-from Cozyfications.bot.main import Cozyfications
+from Cozyfications.bot import core
 
 
-class Tasks(Cog):
-    def __init__(self, bot: Cozyfications):
-        self.bot = bot
+class Tasks(core.Cog):
+    """Background tasks for the bot."""
+
+    def __init__(self, bot: core.Cozyfications) -> None:
+        self.bot: core.Cozyfications = bot
 
         self.execute.start()
         self.alerts.start()
 
-    def cog_unload(self):
+    def cog_unload(self) -> None:
         self.execute.cancel()
         self.alerts.cancel()
         return super().cog_unload()
@@ -19,9 +20,9 @@ class Tasks(Cog):
     @tasks.loop(seconds=0.1)
     async def execute(self):
         index = 0
-        for info in Cozyfications.QUEUE:
+        for info in core.Cozyfications.QUEUE:
             await info["callback"](info["data"], self.bot)
-            Cozyfications.QUEUE.pop(index)
+            core.Cozyfications.QUEUE.pop(index)
             index += 1
 
     @tasks.loop(hours=3)

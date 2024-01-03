@@ -1,5 +1,5 @@
-py-cord-dev==2.5.0rc5
+py-cord==2.4.1
 twitchAPI==4.1.0
-pyngrok==7.0.3
+pyngrok==7.0.5
 mysql-connector-python==8.2.0
 python-dotenv==1.0.0
