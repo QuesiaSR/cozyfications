@@ -1,7 +1,7 @@
 import discord
 
-from Cozyfications.bot import core
 from Cozyfications.database.classes import StreamerDatabase, TwitchDatabase, MessageDatabase
+from bot import Cozyfications
 
 
 class Callbacks:
@@ -42,12 +42,12 @@ class Callbacks:
                 else:
                     print("no channels")
 
-        core.Cozyfications.QUEUE.append({"data": data, "callback": callback})
+        Cozyfications.QUEUE.append({"data": data, "callback": callback})
 
     async def online(self, data):
         print("online")
 
-        async def callback(data, bot: core.Cozyfications):
+        async def callback(data, bot: Cozyfications):
             guilds = await Callbacks.get_guilds(self, data)
 
             for guild in guilds:
@@ -64,12 +64,12 @@ class Callbacks:
                                              channel)
                     msg_db.create_message(sent.id)
 
-        core.Cozyfications.QUEUE.append({"data": data, "callback": callback})
+        Cozyfications.QUEUE.append({"data": data, "callback": callback})
 
     async def offline(self, data):
         print("offline")
 
-        async def callback(data, bot: core.Cozyfications):
+        async def callback(data, bot: Cozyfications):
             guilds = await Callbacks.get_guilds(self, data)
 
             for guild in guilds:
@@ -94,4 +94,4 @@ class Callbacks:
                             pass
                     await channel.send(message)
 
-        core.Cozyfications.QUEUE.append({"data": data, "callback": callback})
+        Cozyfications.QUEUE.append({"data": data, "callback": callback})
