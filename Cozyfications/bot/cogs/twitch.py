@@ -1,8 +1,8 @@
 import discord
 
+from Cozyfications import errors
 from Cozyfications.bot import core
 from Cozyfications.database.classes import TwitchDatabase
-from Cozyfications.errors import *
 
 
 class Twitch(core.Cog):
@@ -38,13 +38,13 @@ class Twitch(core.Cog):
         fetch = self.twitch.get_users(logins=[user.lower()])
 
         if len(fetch["data"]) <= 0 or not fetch["data"][0]["login"].lower() == user.lower():
-            raise TwitchChannelNotFound()
+            raise errors.TwitchChannelNotFound()
 
         userid = fetch["data"][0]["id"]
         streamers = db.get_streamers()
 
         if streamers is not None and userid in streamers:
-            raise TwitchChannelAlreadySelected()
+            raise errors.TwitchChannelAlreadySelected()
 
         await self.bot.subscribe(userid, ctx.guild.id)
         db.add_streamer(userid)
@@ -70,13 +70,13 @@ class Twitch(core.Cog):
         fetch = self.twitch.get_users(logins=[user.lower()])
 
         if len(fetch["data"]) <= 0 or not fetch["data"][0]["login"].lower() == user.lower():
-            raise TwitchChannelNotFound()
+            raise errors.TwitchChannelNotFound()
 
         userid = fetch["data"][0]["id"]
         streamers = db.get_streamers()
 
         if streamers is not None and userid not in streamers:
-            raise TwitchChannelNotSelected()
+            raise errors.TwitchChannelNotSelected()
 
         await self.bot.unsubscribe(userid, ctx.guild.id)
         db.remove_streamer(userid)

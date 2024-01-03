@@ -7,7 +7,8 @@ import discord
 from aiohttp import ClientSession
 
 from Cozyfications import secrets
-from Cozyfications.bot import core
+from callbacks import Callbacks
+from views import ConfirmDialog
 
 
 class Cozyfications(discord.Bot):
@@ -34,9 +35,9 @@ class Cozyfications(discord.Bot):
         self.new_subscriptions: int = 0
         self.delete_subscriptions: int = 0
         self.subscriptions: dict[str, callable] = {
-            "channel.update": core.Callbacks.update,
-            "stream.online": core.Callbacks.online,
-            "stream.offline": core.Callbacks.offline
+            "channel.update": Callbacks.update,
+            "stream.online": Callbacks.online,
+            "stream.offline": Callbacks.offline
         }
 
         self.port: int = 6001
@@ -71,7 +72,7 @@ class Cozyfications(discord.Bot):
             bot_token=self.http.token,
         )
 
-        self.add_view(view=core.ConfirmDialog())
+        self.add_view(view=ConfirmDialog())
 
         msg: str = f"""{self.user.name} is online now!
             BotID: {self.user.id}
