@@ -6,12 +6,15 @@ from embeds import HelpSelectEmbed
 
 
 class ConfirmDialog(discord.ui.View):
+    """Represents a persistent PyCord UI confirm dialog."""
+
     def __init__(self):
+        """Initialises a new confirm dialog."""
         super().__init__(timeout=None)
 
-    @discord.ui.button(label="ok", style=discord.ButtonStyle.green, custom_id="confirm:confirm")
-    async def confirm(self, _: discord.ui.Button, interaction: discord.Interaction):
-        return await interaction.response.send_message("hi")
+    @discord.ui.button(label="OK", style=discord.ButtonStyle.green, custom_id="confirm:confirm")
+    async def confirm(self, _: discord.ui.Button, interaction: discord.Interaction) -> None:
+        return await interaction.response.send_message("Hi", ephemeral=True)
 
 
 class HelpSelect(discord.ui.Select):
@@ -33,11 +36,11 @@ class HelpSelect(discord.ui.Select):
             options=[
                 discord.SelectOption(
                     label=cog_name,
-                    description=cog.__doc__,
+                    description=cog.__doc__
                 )
                 for cog_name, cog in self.cog.bot.cogs.items()
                 if cog.__cog_commands__ and cog_name not in ["Help"]
-            ],
+            ]
         )
 
     async def callback(self, interaction: discord.Interaction) -> None:
@@ -51,5 +54,5 @@ class HelpSelect(discord.ui.Select):
         embed = HelpSelectEmbed(bot=self.bot, cog=cog)
         await interaction.response.send_message(
             embed=embed,
-            ephemeral=True,
+            ephemeral=True
         )
