@@ -71,6 +71,8 @@ class Cozyfications(discord.Bot):
             bot_token=self.http.token,
         )
 
+        self.add_view(view=core.ConfirmDialog())
+
         msg: str = f"""{self.user.name} is online now!
             BotID: {self.user.id}
             Ping: {round(self.latency * 1000)} ms
