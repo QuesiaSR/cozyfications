@@ -55,7 +55,7 @@ class Twitch(core.Cog):
 
     @streamer_group.command(name="remove",
                             description="Remove a streamer you no longer want to receive notifications from!")
-    async def s_remove(self, ctx: discord.ApplicationContext,
+    async def remvove_streamer(self, ctx: discord.ApplicationContext,
                        user: discord.Option(str, description="The streamer's username.", required=True)):
         """Remove a streamer you no longer want to receive notifications from.
 
