@@ -20,7 +20,9 @@ __all__ = (
     "HelpSelect",
     "HelpSelectEmbed",
     "LiveStream",
+    "LiveStreamEmbed",
     "OfflineStream",
+    "OfflineStreamEmbed",
     "RedEmbed",
     "YellowEmbed"
 )

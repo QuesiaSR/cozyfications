@@ -4,6 +4,7 @@ import discord
 
 from .__init__ import Cog
 from .bot import Cozyfications
+from .streams import LiveStream, OfflineStream
 
 
 class Embed(discord.Embed):
@@ -365,3 +366,50 @@ class FeatureRequestEmbed(YellowEmbed):
         self.title: str = f"Feature Request: {feature_name}"
         self.description: str = feature_description
         self.set_author(name=author.display_name, icon_url=author.display_avatar.url)
+
+
+class LiveStreamEmbed(CozyficationsEmbed):
+    """Represents a custom PyCord live stream embed."""
+
+    def __init__(self, *, bot: Cozyfications, stream: LiveStream, **kwargs) -> None:
+        """Initialises a new live stream embed.
+
+        Parameters
+        ----------
+        bot: :class:`Cozyfications`
+            The bot instance.
+        stream: :class:`LiveStream`
+            The live stream instance.
+        **kwargs: Any"""
+        self.bot: Cozyfications = bot
+        self.stream: LiveStream = stream
+        super().__init__(bot=self.bot, **kwargs)
+        self.title: str = f"{self.stream.streamer} is LIVE!"
+        self.description: str = f"[{self.stream.title}]({self.stream.url})"
+        self.set_thumbnail(url=self.stream.profile_picture)
+        self.set_image(url=self.stream.thumbnail)
+        self.add_field(name="Game/Category:", value=self.stream.game, inline=True)
+        self.add_field(name="Viewers:", value=str(self.stream.viewers), inline=True)
+        self.add_field(name="Live Since:", value=discord.utils.format_dt(self.stream.started_at, style="R"),
+                       inline=True)
+
+
+class OfflineStreamEmbed(CozyficationsEmbed):
+    """Represents a custom PyCord offline stream embed."""
+
+    def __init__(self, *, bot: Cozyfications, stream: OfflineStream, **kwargs) -> None:
+        """Initialises a new offline stream embed.
+
+        Parameters
+        ----------
+        bot: :class:`Cozyfications`
+            The bot instance.
+        stream: :class:`OfflineStream`
+            The offline stream instance.
+        **kwargs: Any"""
+        self.bot: Cozyfications = bot
+        self.stream: OfflineStream = stream
+        super().__init__(bot=self.bot, **kwargs)
+        self.title: str = f"{self.stream.streamer} is OFFLINE!"
+        self.description: str = f"[{self.stream.last_title}]({self.stream.url})"
+        self.set_thumbnail(url=self.stream.profile_picture)

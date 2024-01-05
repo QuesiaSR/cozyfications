@@ -17,6 +17,7 @@ class Twitch(core.Cog):
         name="twitch",
         description="Manage your server's Twitch settings!"
     )
+
     streamer_group = twitch_group.create_subgroup(
         name="directory",
         description="Manage the selected streamers!",
