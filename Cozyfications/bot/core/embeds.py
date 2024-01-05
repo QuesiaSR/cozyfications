@@ -313,11 +313,13 @@ class StatsEmbed(CozyficationsEmbed):
         **kwargs: Any"""
         self.bot: Cozyfications = bot
         super().__init__(bot=self.bot, **kwargs)
-        self.title: str = "🤖 Statistics 🤖"
-        self.add_field(name="Servers:", value=str(len(self.bot.guilds)), inline=False)
-        self.add_field(name="New Subscriptions:", value=str(self.bot.new_subscriptions), inline=True)
-        self.add_field(name="Deleted Subscriptions:", value=str(self.bot.delete_subscriptions), inline=False)
-        self.add_field(name="Queued Events:", value=str(len(Cozyfications.QUEUE)), inline=True)
+        self.title: str = "Statistics"
+        self.description: str = "View the statistics of the bot below."
+        self.set_thumbnail(url=self.bot.user.display_avatar.url)
+        self.add_field(name="Server Count", value=str(len(self.bot.guilds)), inline=False)
+        self.add_field(name="New Subscriptions:", value=str(self.bot.new_subscriptions))
+        self.add_field(name="Deleted Subscriptions:", value=str(self.bot.delete_subscriptions))
+        self.add_field(name="Queued Events:", value=str(len(Cozyfications.QUEUE)))
 
 
 class BugReportEmbed(YellowEmbed):
