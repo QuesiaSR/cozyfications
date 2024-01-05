@@ -254,7 +254,7 @@ class HelpSelectEmbed(CozyficationsEmbed):
         super().__init__(bot=bot, **kwargs)
         self.title: str = f"{self.cog.__cog_name__} Commands"
         self.description: str = "\n".join(
-            f"`/{command.qualified_name}`: {command.description}"
+            f"</{command.qualified_name}:{command.qualified_id}>: {command.description}"
             for command in self.cog.walk_commands()
         )
 
