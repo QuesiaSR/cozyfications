@@ -8,7 +8,7 @@ __all__ = (
 
 
 @dataclass
-class Channel:
+class Stream:
     """Base class for all Twitch streams
 
     Attributes
@@ -18,18 +18,27 @@ class Channel:
     url: str
         The streamer's Twitch URL.
     profile_picture: str
-        The streamer's profile picture."""
+        The streamer's profile picture.
+    title: str
+        The title of the stream."""
     streamer: str
     url: str
     profile_picture: str
+    title: str
 
 
 @dataclass
-class LiveStream(Channel):
+class LiveStream(Stream):
     """Dataclass for a live Twitch stream
 
     Attributes
     ------------
+    streamer: str
+        The streamer's username.
+    url: str
+        The streamer's Twitch URL.
+    profile_picture: str
+        The streamer's profile picture.
     title: str
         The title of the stream.
     thumbnail: str
@@ -40,7 +49,6 @@ class LiveStream(Channel):
         The number of viewers watching the stream.
     started_at: datetime
         The time the stream started at."""
-    title: str
     thumbnail: str
     game: str
     viewers: int
@@ -48,11 +56,16 @@ class LiveStream(Channel):
 
 
 @dataclass
-class OfflineStream(Channel):
+class OfflineStream(Stream):
     """Dataclass for an offline Twitch stream
 
     Attributes
     ------------
-    last_title: str
-        The title of the last stream."""
-    last_title: str
+    streamer: str
+        The streamer's username.
+    url: str
+        The streamer's Twitch URL.
+    profile_picture: str
+        The streamer's profile picture.
+    title: str
+        The title of the stream."""
