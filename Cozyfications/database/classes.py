@@ -64,14 +64,14 @@ class TwitchDatabase:
             database.update(
                 f"""UPDATE `cozyfications`.`twitch`
                 SET `message` = '{message}'
-                WHERE (`guil_did` = '{self.guild_id}')"""
+                WHERE (`guild_id` = '{self.guild_id}')"""
             )
 
     def remove_message(self):
         if self.exists():
             database.update(
                 f"""UPDATE `cozyfications`.`twitch`
-                SET `message` = '{None}'
+                SET `message` = NULL
                 WHERE (`guild_id` = '{self.guild_id}')"""
             )
 
