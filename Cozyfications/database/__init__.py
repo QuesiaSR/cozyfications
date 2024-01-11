@@ -5,6 +5,8 @@ from mysql.connector.abstracts import MySQLCursorAbstract
 
 from Cozyfications.secrets import Database
 
+connection: connector.MySQLConnection = connector.connect()
+
 schemas = [
     "CREATE SCHEMA `cozyfications` DEFAULT CHARACTER SET utf8mb4"
 ]
@@ -35,7 +37,7 @@ tables = [
 
 
 class Result:
-    def __init__(self, cursor: MySQLCursorAbstract):
+    def __init__(self, *, cursor: MySQLCursorAbstract):
         self._cur = cursor
         self.rows = cursor.rowcount
 
@@ -57,12 +59,15 @@ class Result:
     @property
     def value_all(self):
         fetch = self._cur.fetchall()
-        if not fetch is None:
+        if fetch is not None:
             return [i[0] if len(i) == 1 else list(i) for i in fetch]
         return []
 
 
 def connect():
+    global connection
+    if connection is not None or connection.is_connected():
+        return connection
     try:
         return connector.connect(
             host=Database.HOST,
@@ -75,7 +80,7 @@ def connect():
         quit(f"Couldn't connect to DB: {e}")
 
 
-def cursor(db):
+def cursor(*, db: connector.MySQLConnection):
     try:
         return db.cursor(buffered=True)
     except Exception as e:
@@ -84,54 +89,43 @@ def cursor(db):
 
 def create():
     db = connect()
-    cur = cursor(db)
+    with cursor(db=db) as cur:
+        print("Creating schemas...")
+        for i in schemas:
+            schema = i.split("`")[1]
+            try:
+                (cur.execute(i), db.commit(), print(f"  Created schema '{schema}'"))
+            except Exception as e:
+                print(f"  Error creating schema '{schema}': {e}")
 
-    print("Creating schemas...")
-    for i in schemas:
-        schema = i.split("`")[1]
-        try:
-            (cur.execute(i), db.commit(), print(f"  Created schema '{schema}'"))
-        except Exception as e:
-            print(f"  Error creating schema '{schema}': {e}")
-
-    print("Creating tables...")
-    for i in tables:
-        table = i.split("`")[3]
-        try:
-            (cur.execute(i), db.commit(), print(f"  Created table '{table}'"))
-        except Exception as e:
-            print(f"  Error creating table '{table}': {e}")
-
-    cur.close()
-    del cur
+        print("Creating tables...")
+        for i in tables:
+            table = i.split("`")[3]
+            try:
+                (cur.execute(i), db.commit(), print(f"  Created table '{table}'"))
+            except Exception as e:
+                print(f"  Error creating table '{table}': {e}")
 
 
-def select(q):
+def select(query: str):
     db = connect()
-    cur = cursor(db)
+    with cursor(db=db) as cur:
+        cur.execute(query)
+        return Result(cursor=cur)
 
-    cur.execute(q)
-    return Result(cur)
 
-
-def update(q):
+def update(query: str):
     db = connect()
-    cur = cursor(db)
-
-    cur.execute(q)
-    db.commit()
-    cur.close()
-    del cur
+    with cursor(db=db) as cur:
+        cur.execute(query)
+        db.commit()
 
 
 def delete(table, guild_id):
     db = connect()
-    cur = cursor(db)
-
-    cur.execute(
-        f"""DELETE FROM `{table}`
-        WHERE guild_id = `{guild_id}`"""
-    )
-    db.commit()
-    cur.close()
-    del cur
+    with cursor(db=db) as cur:
+        cur.execute(
+            f"""DELETE FROM `{table}`
+            WHERE guild_id = `{guild_id}`"""
+        )
+        db.commit()
