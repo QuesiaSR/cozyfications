@@ -12,7 +12,7 @@ schemas = [
 ]
 
 tables = [
-    """CREATE TABLE `cozyfications`.`twitch` (
+    """CREATE TABLE IF NOT EXISTS `cozyfications`.`twitch` (
         `guild_id` BIGINT NOT NULL,
         `streamers` JSON NULL,
         `message` TEXT,
@@ -20,7 +20,7 @@ tables = [
         PRIMARY KEY (`guild_id`),
         UNIQUE INDEX `guild_id_UNIQUE` (`guild_id` ASC) VISIBLE
     )""",
-    """CREATE TABLE `cozyfications`.`messages` (
+    """CREATE TABLE IF NOT EXISTS `cozyfications`.`messages` (
         `message_id` BIGINT NOT NULL,
         `guild_id` BIGINT NULL,
         `streamer` BIGINT NULL,
@@ -28,7 +28,7 @@ tables = [
         PRIMARY KEY (`message_id`),
         UNIQUE INDEX `message_id_UNIQUE` (`message_id` ASC) VISIBLE
     )""",
-    """CREATE TABLE `cozyfications`.`subscriptions` (
+    """CREATE TABLE IF NOT EXISTS `cozyfications`.`subscriptions` (
         `streamer` BIGINT NOT NULL,
         `guild_id` BIGINT NOT NULL,
         `subscription_id` LONGTEXT NOT NULL
@@ -37,9 +37,9 @@ tables = [
 
 
 class Result:
-    def __init__(self, *, cursor: MySQLCursorAbstract):
-        self._cur = cursor
-        self.rows = cursor.rowcount
+    def __init__(self, *, cur: MySQLCursorAbstract):
+        self._cur = cur
+        self.rows = cur.rowcount
 
     @property
     def value(self):
@@ -111,7 +111,7 @@ def select(query: str):
     db = connect()
     with cursor(db=db) as cur:
         cur.execute(query)
-        return Result(cursor=cur)
+        return Result(cur=cur)
 
 
 def update(query: str):
