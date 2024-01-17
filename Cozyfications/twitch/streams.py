@@ -1,3 +1,4 @@
+import abc
 from dataclasses import dataclass
 from datetime import datetime
 
@@ -8,7 +9,7 @@ __all__ = (
 
 
 @dataclass
-class Stream:
+class Stream(abc.ABC):
     """Base class for all Twitch streams
 
     Attributes
@@ -25,6 +26,17 @@ class Stream:
     url: str
     profile_picture: str
     title: str
+
+    @property
+    @abc.abstractmethod
+    def live(self) -> bool:
+        """Returns whether the stream is live or not.
+
+        Returns
+        --------
+        bool
+            Whether the stream is live or not."""
+        pass
 
 
 @dataclass
@@ -54,6 +66,10 @@ class LiveStream(Stream):
     viewers: int
     started_at: datetime
 
+    @property
+    def live(self) -> bool:
+        return True
+
 
 @dataclass
 class OfflineStream(Stream):
@@ -69,3 +85,7 @@ class OfflineStream(Stream):
         The streamer's profile picture.
     title: str
         The title of the stream."""
+
+    @property
+    def live(self) -> bool:
+        return False

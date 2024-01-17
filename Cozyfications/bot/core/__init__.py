@@ -1,20 +1,17 @@
-from discord.ext import commands
-
 from .bot import Cozyfications
-from .callbacks import *
+from .cog import Cog
 from .embeds import *
-from .streams import *
 from .views import *
 
 __all__ = (
     "BugReportEmbed",
-    "Callbacks",
+    "BugReportModal",
     "Cog",
-    "ConfirmDialog",
     "Cozyfications",
     "CozyficationsEmbed",
     "Embed",
     "FeatureRequestEmbed",
+    "FeatureRequestModal",
     "GreenEmbed",
     "HelpEmbed",
     "HelpSelect",
@@ -26,10 +23,3 @@ __all__ = (
     "RedEmbed",
     "YellowEmbed"
 )
-
-
-class Cog(commands.Cog):
-    """Base class for all cogs"""
-
-    def __init__(self, bot: Cozyfications) -> None:
-        self.bot: Cozyfications = bot

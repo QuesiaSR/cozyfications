@@ -6,12 +6,10 @@ import traceback
 import discord
 from aiohttp import ClientSession
 
-from Cozyfications import secrets
-from Cozyfications.bot import core
+from Cozyfications import secrets, database, twitch
 
 
 class Cozyfications(discord.Bot):
-    QUEUE = []
 
     def __init__(self) -> None:
         super().__init__(
@@ -31,20 +29,6 @@ class Cozyfications(discord.Bot):
         self.errors_webhook: discord.Webhook | None = None
         self.color = 0xE0B484
 
-        self.new_subscriptions: int = 0
-        self.delete_subscriptions: int = 0
-        self.subscriptions: dict[str, callable] = {
-            "channel.update": core.Callbacks.update,
-            "stream.online": core.Callbacks.online,
-            "stream.offline": core.Callbacks.offline
-        }
-
-        self.port: int = 6001
-        self.url: str | None = None
-        # TODO: Fix Twitch API
-        #  self.hook: EventSub | None = None
-        #  self.ttv: TwitchAPI | None = None
-
         for filename in os.listdir("Cozyfications/bot/cogs"):
             if filename.endswith(".py"):
                 self.load_cog(f"Cozyfications.bot.cogs.{filename[:-3]}")
@@ -60,6 +44,11 @@ class Cozyfications(discord.Bot):
             e = getattr(e, "original", e)
             print("".join(traceback.format_exception(type(e), e, e.__traceback__)))
 
+    async def on_connect(self):
+        database.setup()
+        await twitch.update_channels()
+        await super().on_connect()
+
     async def on_ready(self):
         if self.on_ready_fired:
             return
@@ -71,14 +60,12 @@ class Cozyfications(discord.Bot):
             bot_token=self.http.token,
         )
 
-        self.add_view(view=core.ConfirmDialog())
-
         msg: str = f"""{self.user.name} is online now!
             BotID: {self.user.id}
             Ping: {round(self.latency * 1000)} ms
             Python Version: {platform.python_version()}
-            PyCord API version: {discord.__version__}"""
-        print(f"\n\n{msg}\n\n")
+            PyCord Version: {discord.__version__}"""
+        print(f"\n{msg}\n")
 
     async def on_application_command_error(self, ctx: discord.ApplicationContext, error: Exception):
         if isinstance((error := error.original), discord.HTTPException):

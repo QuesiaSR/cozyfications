@@ -2,9 +2,9 @@ import datetime
 
 import discord
 
-from .__init__ import Cog
-from .bot import Cozyfications
-from .streams import LiveStream, OfflineStream
+from Cozyfications.bot.core.__init__ import Cog
+from Cozyfications.bot.core.bot import Cozyfications
+from Cozyfications.twitch import LiveStream, OfflineStream
 
 
 class Embed(discord.Embed):
@@ -257,69 +257,6 @@ class HelpSelectEmbed(CozyficationsEmbed):
             f"</{command.qualified_name}:{command.qualified_id}> - {command.description}"
             for command in self.cog.walk_commands()
         )
-
-
-class HelpSelect(discord.ui.Select):
-    """Represents a custom PyCord UI help select menu."""
-
-    def __init__(self, *, bot: Cozyfications, cog: Cog) -> None:
-        """Initialises a new help select menu.
-
-        Parameters
-        ----------
-        bot: :class:`Cozyfications`
-            The bot instance.
-        cog: :class:`Cog`
-            The cog instance."""
-        self.bot: Cozyfications = bot
-        self.cog: Cog = cog
-        super().__init__(
-            placeholder="Choose a category",
-            options=[
-                discord.SelectOption(
-                    label=cog_name,
-                    description=cog.__doc__,
-                )
-                for cog_name, cog in self.cog.bot.cogs.items()
-                if cog.__cog_commands__ and cog_name not in ["Help"]
-            ],
-        )
-
-    async def callback(self, interaction: discord.Interaction) -> None:
-        """Handles the callback for the help select menu.
-
-        Parameters
-        ----------
-        interaction: :class:`discord.Interaction`
-            The interaction instance."""
-        cog = self.cog.bot.get_cog(self.values[0])
-        embed = HelpSelectEmbed(bot=self.bot, cog=cog)
-        await interaction.response.send_message(
-            embed=embed,
-            ephemeral=True,
-        )
-
-
-class StatsEmbed(CozyficationsEmbed):
-    """Represents a custom PyCord stats embed."""
-
-    def __init__(self, *, bot: Cozyfications, **kwargs) -> None:
-        """Initialises a new stats embed.
-
-        Parameters
-        ----------
-        bot: :class:`Cozyfications`
-            The bot instance.
-        **kwargs: Any"""
-        self.bot: Cozyfications = bot
-        super().__init__(bot=self.bot, **kwargs)
-        self.title: str = "Statistics"
-        self.description: str = "View the statistics of the bot below."
-        self.set_thumbnail(url=self.bot.user.display_avatar.url)
-        self.add_field(name="Server Count", value=str(len(self.bot.guilds)), inline=False)
-        self.add_field(name="New Subscriptions:", value=str(self.bot.new_subscriptions))
-        self.add_field(name="Deleted Subscriptions:", value=str(self.bot.delete_subscriptions))
-        self.add_field(name="Queued Events:", value=str(len(Cozyfications.QUEUE)))
 
 
 class BugReportEmbed(YellowEmbed):
