@@ -6,5 +6,8 @@ __all__ = (
     "OfflineStream",
     "get_broadcaster_id",
     "get_channel",
-    "update_channels"
+    "get_channels_autocomplete",
+    "update_channels",
+    "add_subscription",
+    "remove_subscription"
 )

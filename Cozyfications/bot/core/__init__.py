@@ -4,22 +4,19 @@ from .embeds import *
 from .views import *
 
 __all__ = (
-    "BugReportEmbed",
-    "BugReportModal",
-    "Cog",
     "Cozyfications",
+    "Cog",
     "CozyficationsEmbed",
-    "Embed",
-    "FeatureRequestEmbed",
-    "FeatureRequestModal",
     "GreenEmbed",
-    "HelpEmbed",
-    "HelpSelect",
-    "HelpSelectEmbed",
-    "LiveStream",
-    "LiveStreamEmbed",
-    "OfflineStream",
-    "OfflineStreamEmbed",
+    "YellowEmbed",
     "RedEmbed",
-    "YellowEmbed"
+    "HelpEmbed",
+    "HelpSelectEmbed",
+    "BugReportEmbed",
+    "FeatureRequestEmbed",
+    "LiveStreamEmbed",
+    "OfflineStreamEmbed",
+    "HelpSelect",
+    "BugReportModal",
+    "FeatureRequestModal",
 )

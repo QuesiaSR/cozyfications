@@ -23,20 +23,12 @@ class Tasks(core.Cog):
     @tasks.loop(minutes=5)
     async def update_live_channels(self):
         """Updates the embeds of live Twitch channels in subscribed guilds every 5 minutes."""
-        live_channels: list[Type[database.TwitchChannel]] | None = database.get_live_twitch_channels()
-        if live_channels is None:
-            return
+        live_channels: list[Type[database.TwitchChannel]] = database.get_all_live_channels()
         for twitch_channel in live_channels:
             subscribed_guilds = database.get_subscribed_guilds(broadcaster_id=twitch_channel.id)
-            if subscribed_guilds is None:
-                continue
             for guild in subscribed_guilds:
                 channel = await utils.get_or_fetch(obj=self.bot, attr='channel', id=guild.channel_id, default=None)
-                if channel is None:
-                    continue
                 message = await channel.fetch_message(guild.message_id)
-                if message is None:
-                    continue
                 live_stream: twitch.LiveStream | twitch.OfflineStream = await twitch.get_channel(
                     broadcaster_id=twitch_channel.id
                 )
@@ -44,6 +36,7 @@ class Tasks(core.Cog):
                     continue
                 live_embed: core.LiveStreamEmbed = core.LiveStreamEmbed(bot=self.bot, stream=live_stream)
                 # TODO: Support multiple subscriptions per guild.
+                # TODO: Fix embed image not updating.
                 await message.edit(embed=live_embed)
 
     @update_live_channels.before_loop

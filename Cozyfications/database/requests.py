@@ -1,8 +1,9 @@
 from typing import Type
 
+import discord
 from sqlalchemy.orm import Session
 
-from Cozyfications import errors
+from Cozyfications import errors, twitch
 from Cozyfications.database.engine import engine
 from Cozyfications.database.models import Guild, TwitchChannel
 
@@ -26,7 +27,7 @@ def get_guild(*, guild_id: int) -> Guild:
         return guild
 
 
-def set_guild(*, guild_id: int, channel_id: int | None, message_id: int | None) -> None:
+def set_guild(*, guild_id: int, channel_id: int, message_id: int) -> None:
     """Sets the channel ID and message ID of the guild.
 
     Parameters
@@ -81,13 +82,15 @@ def get_twitch_channel(*, broadcaster_id: int) -> TwitchChannel:
         return twitch_channel
 
 
-def set_twitch_channel(*, broadcaster_id: int, live: bool, stream_title: str) -> None:
+def set_twitch_channel(*, broadcaster_id: int, streamer: str, live: bool, stream_title: str) -> None:
     """Sets the Twitch channel's live status and stream title.
 
     Parameters
     ----------
     broadcaster_id: int
         The ID of the Twitch channel.
+    streamer: str
+        The name of the Twitch channel.
     live: bool
         The Twitch channel's live status.
     stream_title: str
@@ -95,11 +98,13 @@ def set_twitch_channel(*, broadcaster_id: int, live: bool, stream_title: str) ->
     with Session(bind=engine) as session:
         if session.query(TwitchChannel).filter_by(id=broadcaster_id).first():
             session.query(TwitchChannel).filter_by(id=broadcaster_id).update({
+                TwitchChannel.streamer: streamer,
                 TwitchChannel.live: live,
                 TwitchChannel.stream_title: stream_title
             })
         else:
-            session.add(TwitchChannel(id=broadcaster_id, live=live, stream_title=stream_title))
+            session.add(TwitchChannel(id=broadcaster_id, streamer=streamer, live=live, stream_title=stream_title))
+            twitch.add_subscription(broadcaster_id=broadcaster_id)
         session.commit()
 
 
@@ -114,6 +119,7 @@ def delete_twitch_channel(*, broadcaster_id: int) -> None:
         if not session.query(TwitchChannel).filter_by(id=broadcaster_id).first():
             raise errors.TwitchChannelNotFoundInDatabase(broadcaster_id=broadcaster_id)
         session.query(TwitchChannel).filter_by(id=broadcaster_id).delete()
+        twitch.remove_subscription(broadcaster_id=broadcaster_id)
         session.commit()
 
 
@@ -128,9 +134,9 @@ def add_subscription(*, guild_id: int, broadcaster_id: int) -> None:
         The ID of the Twitch channel."""
     with Session(bind=engine) as session:
         guild: Guild | None = session.query(Guild).filter_by(id=guild_id).first()
-        twitch_channel = session.query(TwitchChannel).filter_by(id=broadcaster_id).first()
         if not guild:
             raise errors.GuildNotFoundInDatabase(guild_id=guild_id)
+        twitch_channel = session.query(TwitchChannel).filter_by(id=broadcaster_id).first()
         if not twitch_channel:
             raise errors.TwitchChannelNotFoundInDatabase(broadcaster_id=broadcaster_id)
         if twitch_channel in guild.subscribed_channels:
@@ -150,9 +156,9 @@ def remove_subscription(*, guild_id: int, broadcaster_id: int) -> None:
         The ID of the Twitch channel."""
     with Session(bind=engine) as session:
         guild: Guild | None = session.query(Guild).filter_by(id=guild_id).first()
-        twitch_channel = session.query(TwitchChannel).filter_by(id=broadcaster_id).first()
         if not guild:
             raise errors.GuildNotFoundInDatabase(guild_id=guild_id)
+        twitch_channel = session.query(TwitchChannel).filter_by(id=broadcaster_id).first()
         if not twitch_channel:
             raise errors.TwitchChannelNotFoundInDatabase(broadcaster_id=broadcaster_id)
         if twitch_channel not in guild.subscribed_channels:
@@ -164,35 +170,31 @@ def remove_subscription(*, guild_id: int, broadcaster_id: int) -> None:
         session.commit()
 
 
-def get_channels() -> list[Type[TwitchChannel]] | None:
-    """Returns a list of Twitch channels.
+def get_all_channels() -> list[Type[TwitchChannel]]:
+    """Returns a list of all Twitch channels.
 
     Returns
     ----------
-    list[Type[TwitchChannel]] | None
+    list[Type[TwitchChannel]]
         A list of Twitch channels."""
     with Session(bind=engine) as session:
         channels: list[Type[TwitchChannel]] = session.query(TwitchChannel).all()
-        if len(channels) == 0:
-            return None
         return channels
 
 
-def get_live_twitch_channels() -> list[Type[TwitchChannel]] | None:
+def get_all_live_channels() -> list[Type[TwitchChannel]]:
     """Returns a list of Twitch channels that are live.
 
     Returns
     ----------
-    list[Type[TwitchChannel]] | None
+    list[Type[TwitchChannel]]
         A list of Twitch channels that are live."""
     with Session(bind=engine) as session:
         live_channels: list[Type[TwitchChannel]] = session.query(TwitchChannel).filter_by(live=True).all()
-        if len(live_channels) == 0:
-            return None
         return live_channels
 
 
-def get_subscribed_guilds(*, broadcaster_id) -> list[Type[Guild]] | None:
+def get_subscribed_guilds(*, broadcaster_id) -> list[Type[Guild]]:
     """Returns a list of guilds that have subscribed to a Twitch channel.
 
     Parameters
@@ -206,6 +208,25 @@ def get_subscribed_guilds(*, broadcaster_id) -> list[Type[Guild]] | None:
         A list of guilds that have subscribed to a Twitch channel."""
     with Session(bind=engine) as session:
         guilds: list[Type[Guild]] = session.query(Guild).filter(Guild.subscribed_channels.any(id=broadcaster_id)).all()
-        if len(guilds) == 0:
-            return None
         return guilds
+
+
+# TODO: Use cache to reduce database calls.
+def get_subscribed_channels_autocomplete(ctx: discord.AutocompleteContext) -> list[str]:
+    """Returns the Twitch channels matching the ctx requests.
+
+    Parameters
+    ----------
+    ctx: discord.AutocompleteContext
+        The context used for autocomplete invocation
+
+    Returns
+    ----------
+    list[str]
+        The Twitch channels matching the ctx requests."""
+    with (Session(bind=engine) as session):
+        guild: Guild | None = session.query(Guild).filter_by(id=ctx.interaction.guild_id).first()
+        if not guild:
+            return []
+        channels: list[str] = [channel.streamer for channel in guild.subscribed_channels]
+        return channels

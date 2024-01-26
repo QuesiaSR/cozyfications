@@ -10,6 +10,8 @@ __all__ = (
     "TwitchChannel"
 )
 
+# TODO: Make DB async
+
 
 class Base(sqlalchemy.orm.DeclarativeBase):
     """Base class for SQLAlchemy models."""
@@ -80,6 +82,8 @@ class TwitchChannel(Base):
     ----------
     id: int
         The ID of the Twitch channel.
+    streamer: str
+        The Twitch channel's username.
     live: bool
         Whether the Twitch channel is live.
     stream_title: str
@@ -89,6 +93,7 @@ class TwitchChannel(Base):
     __tablename__ = "twitch_channels"
 
     id: Mapped[int] = mapped_column(primary_key=True)
+    streamer: Mapped[str] = mapped_column(nullable=False)
     live: Mapped[bool] = mapped_column(nullable=False)
     stream_title: Mapped[str] = mapped_column(nullable=False)
     guilds: Mapped[List["Guild"]] = relationship(
@@ -108,6 +113,7 @@ class TwitchChannel(Base):
         except sqlalchemy.orm.exc.DetachedInstanceError:
             guilds = "<not loaded>"
         return f"""TwitchChannel:
+    streamer={self.streamer},
     id={self.id},
     live={self.live},
     stream_title={self.stream_title}

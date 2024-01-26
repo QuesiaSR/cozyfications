@@ -4,7 +4,7 @@ import discord
 
 from Cozyfications.bot.core.__init__ import Cog
 from Cozyfications.bot.core.bot import Cozyfications
-from Cozyfications.twitch import LiveStream, OfflineStream
+from Cozyfications import twitch
 
 
 class Embed(discord.Embed):
@@ -310,7 +310,7 @@ class FeatureRequestEmbed(YellowEmbed):
 class LiveStreamEmbed(CozyficationsEmbed):
     """Represents a custom PyCord live stream embed."""
 
-    def __init__(self, *, bot: Cozyfications, stream: LiveStream, **kwargs) -> None:
+    def __init__(self, *, bot: Cozyfications, stream: twitch.LiveStream, **kwargs) -> None:
         """Initialises a new live stream embed.
 
         Parameters
@@ -321,7 +321,7 @@ class LiveStreamEmbed(CozyficationsEmbed):
             The live stream instance.
         **kwargs: Any"""
         self.bot: Cozyfications = bot
-        self.stream: LiveStream = stream
+        self.stream: twitch.LiveStream = stream
         super().__init__(bot=self.bot, **kwargs)
         self.title: str = f"{self.stream.streamer} is LIVE!"
         self.url: str = self.stream.url
@@ -337,7 +337,7 @@ class LiveStreamEmbed(CozyficationsEmbed):
 class OfflineStreamEmbed(CozyficationsEmbed):
     """Represents a custom PyCord offline stream embed."""
 
-    def __init__(self, *, bot: Cozyfications, stream: OfflineStream, **kwargs) -> None:
+    def __init__(self, *, bot: Cozyfications, stream: twitch.OfflineStream, **kwargs) -> None:
         """Initialises a new offline stream embed.
 
         Parameters
@@ -348,7 +348,7 @@ class OfflineStreamEmbed(CozyficationsEmbed):
             The offline stream instance.
         **kwargs: Any"""
         self.bot: Cozyfications = bot
-        self.stream: OfflineStream = stream
+        self.stream: twitch.OfflineStream = stream
         super().__init__(bot=self.bot, **kwargs)
         self.title: str = f"{self.stream.streamer} is OFFLINE!"
         self.url: str = self.stream.url

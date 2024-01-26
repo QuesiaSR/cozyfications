@@ -1,5 +1,6 @@
 import discord
 from discord.ext import commands
+from discord.utils import basic_autocomplete
 
 from Cozyfications import database, errors, twitch
 from Cozyfications.bot import core
@@ -31,6 +32,8 @@ class Settings(core.Cog):
             The channel to send live stream notifications to.
         message_id: str
             The message to edit when a stream goes live."""
+        await ctx.defer(ephemeral=True)
+
         cozyfications_message: discord.Message | None = None
 
         if message_id is None:
@@ -44,7 +47,7 @@ class Settings(core.Cog):
         try:
             message_id: int = int(message_id)
         except ValueError:
-            await ctx.respond(embed=core.RedEmbed(
+            await ctx.followup.send(embed=core.RedEmbed(
                 title="Error",
                 description="Invalid message ID!"
             ), ephemeral=True)
@@ -54,7 +57,7 @@ class Settings(core.Cog):
             cozyfications_message = await channel.fetch_message(message_id)
 
         if cozyfications_message.author != self.bot.user:
-            await ctx.respond(embed=core.RedEmbed(
+            await ctx.followup.send(embed=core.RedEmbed(
                 title="Error",
                 description="The message must be sent by the bot!"
             ), ephemeral=True)
@@ -74,7 +77,7 @@ class Settings(core.Cog):
             name="Message",
             value=f"[Click Here]({cozyfications_message.jump_url})"
         )
-        await ctx.respond(embed=success_embed, ephemeral=True)
+        await ctx.followup.send(embed=success_embed, ephemeral=True)
 
     twitch_group: discord.SlashCommandGroup = discord.SlashCommandGroup(
         name="twitch",
@@ -92,7 +95,8 @@ class Settings(core.Cog):
                                        channel: discord.Option(
                                            str,
                                            description="The Twitch channel to subscribe to!",
-                                           required=True
+                                           required=True,
+                                           autocomplete=twitch.get_channels_autocomplete
                                        )) -> None:
         """Subscribe to a Twitch channel!
 
@@ -102,10 +106,12 @@ class Settings(core.Cog):
             The context used for command invocation.
         channel: str
             The Twitch channel to subscribe to."""
+        await ctx.defer(ephemeral=True)
+
         try:
             broadcaster_id: int = await twitch.get_broadcaster_id(channel=channel)
         except errors.TwitchChannelNotFound:
-            await ctx.respond(embed=core.RedEmbed(
+            await ctx.followup.send(embed=core.RedEmbed(
                 title="Error",
                 description="Invalid Twitch channel!"
             ), ephemeral=True)
@@ -120,8 +126,7 @@ class Settings(core.Cog):
 
         except errors.GuildNotFoundInDatabase:
             setup_command = self.bot.get_application_command("setup")
-            print(f"Command: {setup_command}")
-            await ctx.respond(embed=core.RedEmbed(
+            await ctx.followup.send(embed=core.RedEmbed(
                 title="Error",
                 description=f"""The guild has not been set up yet!
                 Use </{setup_command.qualified_name}:{setup_command.qualified_id}> to set up the guild."""
@@ -131,18 +136,20 @@ class Settings(core.Cog):
         except errors.TwitchChannelNotFoundInDatabase:
             database.set_twitch_channel(
                 broadcaster_id=broadcaster_id,
+                streamer=twitch_channel.streamer,
                 live=twitch_channel.live,
                 stream_title=twitch_channel.title
             )
+            database.add_subscription(guild_id=ctx.guild.id, broadcaster_id=broadcaster_id)
 
         except errors.DuplicateSubscription:
-            await ctx.respond(embed=core.RedEmbed(
+            await ctx.followup.send(embed=core.RedEmbed(
                 title="Error",
                 description=f"Already subscribed to [{twitch_channel.streamer}]({twitch_channel.url})!"
             ), ephemeral=True)
             return
 
-        await ctx.respond(embed=core.GreenEmbed(
+        await ctx.followup.send(embed=core.GreenEmbed(
             title="Success!",
             description=f"Successfully subscribed to [{twitch_channel.streamer}]({twitch_channel.url})!"
         ), ephemeral=True)
@@ -152,7 +159,10 @@ class Settings(core.Cog):
                                          channel: discord.Option(
                                              str,
                                              description="The Twitch channel to unsubscribe from!",
-                                             required=True
+                                             required=True,
+                                             autocomplete=basic_autocomplete(
+                                                 database.get_subscribed_channels_autocomplete
+                                             )
                                          )) -> None:
         """Unsubscribe from a Twitch channel!
 
@@ -162,10 +172,12 @@ class Settings(core.Cog):
             The context used for command invocation.
         channel: str
             The Twitch channel to unsubscribe from."""
-        broadcaster_id: int = await twitch.get_broadcaster_id(channel=channel)
+        await ctx.defer(ephemeral=True)
 
-        if broadcaster_id is None:
-            await ctx.respond(embed=core.RedEmbed(
+        try:
+            broadcaster_id: int = await twitch.get_broadcaster_id(channel=channel)
+        except errors.TwitchChannelNotFound:
+            await ctx.followup.send(embed=core.RedEmbed(
                 title="Error",
                 description="Invalid Twitch channel!"
             ), ephemeral=True)
@@ -177,13 +189,24 @@ class Settings(core.Cog):
 
         try:
             database.remove_subscription(guild_id=ctx.guild.id, broadcaster_id=broadcaster_id)
-        except errors.SubscriptionNotFound:
-            await ctx.respond(embed=core.RedEmbed(
+
+        except errors.GuildNotFoundInDatabase:
+            setup_command = self.bot.get_application_command("setup")
+            await ctx.followup.send(embed=core.RedEmbed(
+                title="Error",
+                description=f"""The guild has not been set up yet!
+                Use </{setup_command.qualified_name}:{setup_command.qualified_id}> to set up the guild."""
+            ), ephemeral=True)
+            return
+
+        except errors.TwitchChannelNotFoundInDatabase or errors.SubscriptionNotFound:
+            await ctx.followup.send(embed=core.RedEmbed(
                 title="Error",
                 description=f"Not subscribed to [{twitch_channel.streamer}]({twitch_channel.url})!"
             ), ephemeral=True)
             return
-        await ctx.respond(embed=core.GreenEmbed(
+
+        await ctx.followup.send(embed=core.GreenEmbed(
             title="Success!",
             description=f"Successfully unsubscribed from [{twitch_channel.streamer}]({twitch_channel.url})!"
         ), ephemeral=True)
