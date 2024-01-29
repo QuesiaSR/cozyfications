@@ -211,6 +211,26 @@ def get_subscribed_guilds(*, broadcaster_id) -> list[Type[Guild]]:
         return guilds
 
 
+def get_subscribed_channels(*, guild_id: int) -> list[Type[TwitchChannel]]:
+    """Returns a list of Twitch channels that a guild has subscribed to.
+
+    Parameters
+    ----------
+    guild_id: int
+        The ID of the guild.
+
+    Returns
+    ----------
+    list[Type[TwitchChannel]] | None
+        A list of Twitch channels that a guild has subscribed to."""
+    with Session(bind=engine) as session:
+        guild: Guild | None = session.query(Guild).filter_by(id=guild_id).first()
+        if not guild:
+            raise errors.GuildNotFoundInDatabase(guild_id=guild_id)
+        channels: list[Type[TwitchChannel]] = guild.subscribed_channels
+        return channels
+
+
 # TODO: Use cache to reduce database calls.
 def get_subscribed_channels_autocomplete(ctx: discord.AutocompleteContext) -> list[str]:
     """Returns the Twitch channels matching the ctx requests.
