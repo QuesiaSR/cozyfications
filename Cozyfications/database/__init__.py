@@ -17,5 +17,6 @@ __all__ = (
     "get_all_channels",
     "get_all_live_channels",
     "get_subscribed_guilds",
+    "get_subscribed_channels",
     "get_subscribed_channels_autocomplete"
 )

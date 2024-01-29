@@ -1,4 +1,5 @@
 import discord
+from discord import utils
 from discord.ext import commands
 from discord.utils import basic_autocomplete
 
@@ -149,6 +150,16 @@ class Settings(core.Cog):
             ), ephemeral=True)
             return
 
+        guild = database.get_guild(guild_id=ctx.guild.id)
+        channel = await utils.get_or_fetch(obj=self.bot, attr='channel', id=guild.channel_id, default=None)
+        message = await channel.fetch_message(guild.message_id)
+        if twitch_channel.live:
+            embed: core.LiveStreamEmbed = core.LiveStreamEmbed(bot=self.bot, stream=twitch_channel)
+        else:
+            embed: core.OfflineStreamEmbed = core.OfflineStreamEmbed(bot=self.bot, stream=twitch_channel)
+        # TODO: Support multiple subscriptions per guild.
+        await message.edit(embed=embed)
+
         await ctx.followup.send(embed=core.GreenEmbed(
             title="Success!",
             description=f"Successfully subscribed to [{twitch_channel.streamer}]({twitch_channel.url})!"
@@ -205,6 +216,16 @@ class Settings(core.Cog):
                 description=f"Not subscribed to [{twitch_channel.streamer}]({twitch_channel.url})!"
             ), ephemeral=True)
             return
+
+        guild = database.get_guild(guild_id=ctx.guild.id)
+        if len(database.get_subscribed_channels(guild_id=guild.id)) == 0:
+            channel = await utils.get_or_fetch(obj=self.bot, attr='channel', id=guild.channel_id, default=None)
+            message = await channel.fetch_message(guild.message_id)
+            await message.edit(embed=core.CozyficationsEmbed(
+                title="Live Stream Notifications",
+                description="This message will be edited when a stream goes live!",
+                bot=self.bot
+            ))
 
         await ctx.followup.send(embed=core.GreenEmbed(
             title="Success!",

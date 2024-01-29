@@ -32,7 +32,7 @@ class Tasks(core.Cog):
                 live_stream: twitch.LiveStream | twitch.OfflineStream = await twitch.get_channel(
                     broadcaster_id=twitch_channel.id
                 )
-                live_embed: core.OfflineStreamEmbed = core.OfflineStreamEmbed(bot=self.bot, stream=live_stream)
+                live_embed: core.LiveStreamEmbed = core.LiveStreamEmbed(bot=self.bot, stream=live_stream)
                 # TODO: Support multiple subscriptions per guild.
                 # TODO: Fix embed image not updating.
                 await message.edit(embed=live_embed)
