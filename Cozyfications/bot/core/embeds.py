@@ -328,7 +328,7 @@ class LiveStreamEmbed(CozyficationsEmbed):
         self.set_thumbnail(url=self.stream.profile_picture)
         self.set_image(url=self.stream.thumbnail)
         self.add_field(name="Stream Title:", value=self.stream.title, inline=False)
-        self.add_field(name="Game/Category:", value=self.stream.game, inline=True)
+        self.add_field(name="Game:", value=self.stream.game, inline=True)
         self.add_field(name="Viewers:", value=str(self.stream.viewers), inline=True)
         self.add_field(name="Live Since:", value=discord.utils.format_dt(self.stream.started_at, style="R"),
                        inline=True)

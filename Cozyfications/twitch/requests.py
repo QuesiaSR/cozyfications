@@ -44,13 +44,13 @@ async def get_channel(*, broadcaster_id: int) -> LiveStream | OfflineStream:
         The Twitch channel."""
     async with await Twitch() as twitch:
         stream: Stream = await helper.first(twitch.get_streams(user_id=str(broadcaster_id)))
-        profile_picture: str = (await helper.first(twitch.get_users(user_ids=[str(broadcaster_id)]))).profile_image_url
-        thumbnail: str = stream.thumbnail_url.replace("{width}", "1920").replace("{height}", "1080")
+        streamer: TwitchUser = await helper.first(twitch.get_users(user_ids=[str(broadcaster_id)]))
         if stream:
+            thumbnail: str = stream.thumbnail_url.replace("{width}", "1920").replace("{height}", "1080")
             twitch_channel = LiveStream(
                 streamer=stream.user_name,
                 url=f"https://www.twitch.tv/{stream.user_name}",
-                profile_picture=profile_picture,
+                profile_picture=streamer.profile_image_url,
                 title=stream.title,
                 thumbnail=thumbnail,
                 game=stream.game_name,
@@ -58,7 +58,6 @@ async def get_channel(*, broadcaster_id: int) -> LiveStream | OfflineStream:
                 started_at=stream.started_at
             )
         else:
-            streamer: TwitchUser = await helper.first(twitch.get_users(user_ids=[str(broadcaster_id)]))
             try:
                 title = database.get_twitch_channel(broadcaster_id=broadcaster_id).stream_title
             except errors.TwitchChannelNotFoundInDatabase:
@@ -66,7 +65,7 @@ async def get_channel(*, broadcaster_id: int) -> LiveStream | OfflineStream:
             twitch_channel = OfflineStream(
                 streamer=streamer.display_name,
                 url=f"https://www.twitch.tv/{streamer.display_name}",
-                profile_picture=profile_picture,
+                profile_picture=streamer.profile_image_url,
                 title=title
             )
         return twitch_channel
