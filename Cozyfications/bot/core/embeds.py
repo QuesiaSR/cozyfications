@@ -2,9 +2,9 @@ import datetime
 
 import discord
 
+from Cozyfications import twitch
 from Cozyfications.bot.core.__init__ import Cog
 from Cozyfications.bot.core.bot import Cozyfications
-from Cozyfications import twitch
 
 
 class Embed(discord.Embed):
