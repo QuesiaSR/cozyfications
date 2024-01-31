@@ -109,6 +109,17 @@ class Settings(core.Cog):
             The Twitch channel to subscribe to."""
         await ctx.defer(ephemeral=True)
 
+        try:
+            guild: database.Guild = database.get_guild(guild_id=ctx.guild.id)
+        except errors.GuildNotFoundInDatabase:
+            setup_command = self.bot.get_application_command("setup")
+            await ctx.followup.send(embed=core.RedEmbed(
+                title="Error",
+                description=f"""The guild has not been set up yet!
+                Use </{setup_command.qualified_name}:{setup_command.qualified_id}> to set up the guild."""
+            ), ephemeral=True)
+            return
+
         if len(database.get_subscribed_channels(guild_id=ctx.guild_id)) >= 10:
             await ctx.followup.send(embed=core.RedEmbed(
                 title="Error",
@@ -131,16 +142,6 @@ class Settings(core.Cog):
 
         try:
             database.add_subscription(guild_id=ctx.guild.id, broadcaster_id=broadcaster_id)
-
-        except errors.GuildNotFoundInDatabase:
-            setup_command = self.bot.get_application_command("setup")
-            await ctx.followup.send(embed=core.RedEmbed(
-                title="Error",
-                description=f"""The guild has not been set up yet!
-                Use </{setup_command.qualified_name}:{setup_command.qualified_id}> to set up the guild."""
-            ), ephemeral=True)
-            return
-
         except errors.TwitchChannelNotFoundInDatabase:
             database.set_twitch_channel(
                 broadcaster_id=broadcaster_id,
@@ -149,7 +150,6 @@ class Settings(core.Cog):
                 stream_title=twitch_channel.title
             )
             database.add_subscription(guild_id=ctx.guild.id, broadcaster_id=broadcaster_id)
-
         except errors.DuplicateSubscription:
             await ctx.followup.send(embed=core.RedEmbed(
                 title="Error",
@@ -157,7 +157,6 @@ class Settings(core.Cog):
             ), ephemeral=True)
             return
 
-        guild: database.Guild = database.get_guild(guild_id=ctx.guild.id)
         try:
             channel: discord.TextChannel = await utils.get_or_fetch(obj=self.bot, attr='channel', id=guild.channel_id)
             message: discord.Message = await channel.fetch_message(guild.message_id)
