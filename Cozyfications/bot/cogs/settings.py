@@ -109,7 +109,7 @@ class Settings(core.Cog):
             The Twitch channel to subscribe to."""
         await ctx.defer(ephemeral=True)
 
-        if len(database.get_subscribed_channels(guild_id=ctx.guild_id)) > 10:
+        if len(database.get_subscribed_channels(guild_id=ctx.guild_id)) >= 10:
             await ctx.followup.send(embed=core.RedEmbed(
                 title="Error",
                 description="You can only subscribe to 10 Twitch channels per server!"
