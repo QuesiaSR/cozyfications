@@ -171,7 +171,7 @@ class Settings(core.Cog):
             embed: core.LiveStreamEmbed = core.LiveStreamEmbed(bot=self.bot, stream=twitch_channel)
         else:
             embed: core.OfflineStreamEmbed = core.OfflineStreamEmbed(bot=self.bot, stream=twitch_channel)
-        embeds = message.embeds
+        embeds = [embed for embed in message.embeds if embed.title != "Live Stream Notifications"]
         embeds.append(embed)
         await message.edit(embeds=embeds)
 
