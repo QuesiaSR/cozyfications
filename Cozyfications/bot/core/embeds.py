@@ -326,6 +326,7 @@ class LiveStreamEmbed(CozyficationsEmbed):
         self.title: str = f"{self.stream.streamer} is LIVE!"
         self.url: str = self.stream.url
         self.set_thumbnail(url=self.stream.profile_picture)
+        # TODO: Fix embed image not updating.
         self.set_image(url=self.stream.thumbnail)
         self.add_field(name="Stream Title:", value=self.stream.title, inline=False)
         self.add_field(name="Game:", value=self.stream.game, inline=True)

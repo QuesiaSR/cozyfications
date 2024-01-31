@@ -1,5 +1,6 @@
 from typing import Type
 
+import discord
 from discord import utils
 from discord.ext import tasks
 
@@ -33,9 +34,13 @@ class Tasks(core.Cog):
                     broadcaster_id=twitch_channel.id
                 )
                 live_embed: core.LiveStreamEmbed = core.LiveStreamEmbed(bot=self.bot, stream=live_stream)
-                # TODO: Support multiple subscriptions per guild.
-                # TODO: Fix embed image not updating.
-                await message.edit(embed=live_embed)
+
+                embeds: list[discord.Embed] = core.create_embeds_list(
+                    message=message,
+                    twitch_channel=twitch_channel,
+                    new_embed=live_embed
+                )
+                await message.edit(embeds=embeds)
 
     @update_live_channels.before_loop
     async def before_update_live_channels(self):
@@ -53,9 +58,13 @@ class Tasks(core.Cog):
                 channel = await utils.get_or_fetch(obj=self.bot, attr='channel', id=guild.channel_id, default=None)
                 message = await channel.fetch_message(guild.message_id)
                 offline_embed: core.OfflineStreamEmbed = core.OfflineStreamEmbed(bot=self.bot, stream=stream)
-                # TODO: Support multiple subscriptions per guild.
-                # TODO: Fix embed image not updating.
-                await message.edit(embed=offline_embed)
+
+                embeds: list[discord.Embed] = core.create_embeds_list(
+                    message=message,
+                    twitch_channel=twitch_channel,
+                    new_embed=offline_embed
+                )
+                await message.edit(embeds=embeds)
 
 
 def setup(bot):

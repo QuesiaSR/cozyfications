@@ -109,6 +109,13 @@ class Settings(core.Cog):
             The Twitch channel to subscribe to."""
         await ctx.defer(ephemeral=True)
 
+        if len(database.get_subscribed_channels(guild_id=ctx.guild_id)) > 10:
+            await ctx.followup.send(embed=core.RedEmbed(
+                title="Error",
+                description="You can only subscribe to 10 Twitch channels per server!"
+            ), ephemeral=True)
+            return
+
         try:
             broadcaster_id: int = await twitch.get_broadcaster_id(channel=channel)
         except errors.TwitchChannelNotFound:
@@ -150,15 +157,24 @@ class Settings(core.Cog):
             ), ephemeral=True)
             return
 
-        guild = database.get_guild(guild_id=ctx.guild.id)
-        channel = await utils.get_or_fetch(obj=self.bot, attr='channel', id=guild.channel_id, default=None)
-        message = await channel.fetch_message(guild.message_id)
+        guild: database.Guild = database.get_guild(guild_id=ctx.guild.id)
+        try:
+            channel: discord.TextChannel = await utils.get_or_fetch(obj=self.bot, attr='channel', id=guild.channel_id)
+            message: discord.Message = await channel.fetch_message(guild.message_id)
+        except discord.NotFound:
+            await ctx.followup.send(embed=core.RedEmbed(
+                title="Error",
+                description="The channel or message has been deleted! Please set up the guild again."
+            ), ephemeral=True)
+            return
+
         if twitch_channel.live:
             embed: core.LiveStreamEmbed = core.LiveStreamEmbed(bot=self.bot, stream=twitch_channel)
         else:
             embed: core.OfflineStreamEmbed = core.OfflineStreamEmbed(bot=self.bot, stream=twitch_channel)
-        # TODO: Support multiple subscriptions per guild.
-        await message.edit(embed=embed)
+        embeds = message.embeds
+        embeds.append(embed)
+        await message.edit(embeds=embeds)
 
         await ctx.followup.send(embed=core.GreenEmbed(
             title="Success!",
@@ -218,14 +234,29 @@ class Settings(core.Cog):
             return
 
         guild = database.get_guild(guild_id=ctx.guild.id)
+        try:
+            channel: discord.TextChannel = await utils.get_or_fetch(
+                obj=self.bot,
+                attr='channel',
+                id=guild.channel_id
+            )
+            message: discord.Message = await channel.fetch_message(guild.message_id)
+        except discord.NotFound:
+            await ctx.followup.send(embed=core.RedEmbed(
+                title="Error",
+                description="The channel or message has been deleted! Please set up the guild again."
+            ), ephemeral=True)
+            return
+
         if len(database.get_subscribed_channels(guild_id=guild.id)) == 0:
-            channel = await utils.get_or_fetch(obj=self.bot, attr='channel', id=guild.channel_id, default=None)
-            message = await channel.fetch_message(guild.message_id)
             await message.edit(embed=core.CozyficationsEmbed(
                 title="Live Stream Notifications",
                 description="This message will be edited when a stream goes live!",
                 bot=self.bot
             ))
+        else:
+            embeds = [embed for embed in message.embeds if twitch_channel.streamer not in embed.title]
+            await message.edit(embeds=embeds)
 
         await ctx.followup.send(embed=core.GreenEmbed(
             title="Success!",
