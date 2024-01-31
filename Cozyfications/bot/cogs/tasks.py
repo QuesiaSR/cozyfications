@@ -44,19 +44,18 @@ class Tasks(core.Cog):
         channels: list[Type[database.TwitchChannel]] = database.get_all_channels()
         for twitch_channel in channels:
             subscribed_guilds = database.get_subscribed_guilds(broadcaster_id=twitch_channel.id)
+            stream: twitch.LiveStream | twitch.OfflineStream = await twitch.get_channel(
+                broadcaster_id=twitch_channel.id
+            )
+            if stream.live:
+                continue
             for guild in subscribed_guilds:
                 channel = await utils.get_or_fetch(obj=self.bot, attr='channel', id=guild.channel_id, default=None)
                 message = await channel.fetch_message(guild.message_id)
-                stream: twitch.LiveStream | twitch.OfflineStream = await twitch.get_channel(
-                    broadcaster_id=twitch_channel.id
-                )
-                if stream.live:
-                    embed: core.LiveStreamEmbed = core.LiveStreamEmbed(bot=self.bot, stream=stream)
-                else:
-                    embed: core.OfflineStreamEmbed = core.OfflineStreamEmbed(bot=self.bot, stream=stream)
+                offline_embed: core.OfflineStreamEmbed = core.OfflineStreamEmbed(bot=self.bot, stream=stream)
                 # TODO: Support multiple subscriptions per guild.
                 # TODO: Fix embed image not updating.
-                await message.edit(embed=embed)
+                await message.edit(embed=offline_embed)
 
 
 def setup(bot):
