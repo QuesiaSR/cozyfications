@@ -1,6 +1,6 @@
-from sqlalchemy import create_engine, event
+from sqlalchemy import event, create_engine, Engine
 
-engine = create_engine("sqlite:///Cozyfications/database/Cozyfications.db")
+engine: Engine = create_engine("sqlite:///Cozyfications/database/Cozyfications.db")
 
 
 @event.listens_for(target=engine, identifier="connect")
