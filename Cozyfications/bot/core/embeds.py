@@ -1,8 +1,9 @@
 import datetime
+from typing import Type
 
 import discord
 
-from Cozyfications import twitch
+from Cozyfications import twitch, database
 from Cozyfications.bot.core.__init__ import Cog
 from Cozyfications.bot.core.bot import Cozyfications
 
@@ -326,8 +327,7 @@ class LiveStreamEmbed(CozyficationsEmbed):
         self.title: str = f"{self.stream.streamer} is LIVE!"
         self.url: str = self.stream.url
         self.set_thumbnail(url=self.stream.profile_picture)
-        # TODO: Fix embed image not updating.
-        self.set_image(url=self.stream.thumbnail)
+        self.set_image(url=f"{self.stream.thumbnail}?t={datetime.datetime.utcnow().timestamp()}")
         self.add_field(name="Stream Title:", value=self.stream.title, inline=False)
         self.add_field(name="Game:", value=self.stream.game, inline=True)
         self.add_field(name="Viewers:", value=str(self.stream.viewers), inline=True)
@@ -355,3 +355,34 @@ class OfflineStreamEmbed(CozyficationsEmbed):
         self.url: str = self.stream.url
         self.add_field(name="Last Stream Title:", value=self.stream.title, inline=False)
         self.set_thumbnail(url=self.stream.profile_picture)
+
+
+def create_embeds_list(*, message: discord.Message, twitch_channel: Type[database.TwitchChannel],
+                       new_embed: discord.Embed) -> list[discord.Embed]:
+    """Creates a list of embeds with the new embed inserted at the correct index.
+
+    Arguments
+    ---------
+    message : discord.Message
+        The message to edit.
+    twitch_channel : database.TwitchChannel
+        The Twitch channel to get the index from.
+    new_embed : discord.Embed
+        The embed to insert.
+
+    Returns
+    -------
+    list[discord.Embed]
+        The list of embeds."""
+    index_to_insert = None
+    embeds = []
+    for index, embed in enumerate(message.embeds):
+        if twitch_channel.streamer in embed.title:
+            index_to_insert = index
+        else:
+            embeds.append(embed)
+    if index_to_insert is not None:
+        embeds.insert(index_to_insert, new_embed)
+    else:
+        embeds.append(new_embed)
+    return embeds

@@ -1,7 +1,6 @@
 from .bot import Cozyfications
 from .cog import Cog
 from .embeds import *
-from .utils import *
 from .views import *
 
 __all__ = (
