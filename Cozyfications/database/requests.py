@@ -5,8 +5,8 @@ from sqlalchemy import select
 from sqlalchemy.orm import joinedload
 
 from Cozyfications import errors, twitch
-from Cozyfications.database.setup import async_session
 from Cozyfications.database.models import Guild, TwitchChannel
+from Cozyfications.database.setup import async_session
 
 
 async def get_guild(*, guild_id: int) -> Guild:

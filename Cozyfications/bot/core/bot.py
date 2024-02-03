@@ -33,16 +33,23 @@ class Cozyfications(discord.Bot):
             if filename.endswith(".py"):
                 self.load_cog(f"Cozyfications.bot.cogs.{filename[:-3]}")
 
+    def load_cog(self, cog: str) -> None:
+        try:
+            self.load_extension(cog)
+        except Exception as error:
+            error = getattr(error, "original", error)
+            print("".join(traceback.format_exception(type(error), error, error.__traceback__)))
+
     @property
     def http_session(self) -> ClientSession:
         return self.http._HTTPClient__session
 
-    def load_cog(self, cog: str) -> None:
-        try:
-            self.load_extension(cog)
-        except Exception as e:
-            e = getattr(e, "original", e)
-            print("".join(traceback.format_exception(type(e), e, e.__traceback__)))
+    def get_errors_webhook(self) -> discord.Webhook:
+        return discord.Webhook.from_url(
+            url=secrets.Discord.ERRORS_WEBHOOK,
+            session=self.http_session,
+            bot_token=self.http.token,
+        )
 
     async def on_connect(self):
         await database.setup()
@@ -54,11 +61,7 @@ class Cozyfications(discord.Bot):
             return
         self.on_ready_fired = True
 
-        self.errors_webhook: discord.Webhook = discord.Webhook.from_url(
-            url=secrets.Discord.ERRORS_WEBHOOK,
-            session=self.http_session,
-            bot_token=self.http.token,
-        )
+        self.errors_webhook: discord.Webhook = self.get_errors_webhook()
 
         msg: str = f"""{self.user.name} is online now!
             BotID: {self.user.id}
@@ -123,7 +126,6 @@ class Cozyfications(discord.Bot):
         )
         error_embed.add_field(name="Event:", value=f"```py\n{event}```", inline=True)
         error_embed.add_field(name="Args:", value=f"```py\n{args}```", inline=True)
-        error_embed.add_field(name="KwArgs:", value=f"```py\n{kwargs}```", inline=True)
         for i in range(0, len(formatted_error), 1015):
             error_embed.add_field(
                 name="Error:" if i == 0 else "",

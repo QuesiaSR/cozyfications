@@ -19,7 +19,7 @@ class Feedback(core.Cog):
         ------------
         ctx: discord.ApplicationContext
             The context used for command invocation."""
-        await ctx.send_modal(core.BugReportModal(title="Bug Report"))
+        await ctx.send_modal(core.BugReportModal())
 
     request_group: discord.SlashCommandGroup = discord.SlashCommandGroup(
         name="request",
@@ -34,7 +34,7 @@ class Feedback(core.Cog):
         ------------
         ctx: discord.ApplicationContext
             The context used for command invocation."""
-        await ctx.send_modal(core.FeatureRequestModal(title="Feature Request"))
+        await ctx.send_modal(core.FeatureRequestModal())
 
 
 def setup(bot):

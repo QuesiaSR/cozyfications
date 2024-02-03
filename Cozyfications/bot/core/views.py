@@ -29,6 +29,7 @@ class BugReportModal(discord.ui.Modal):
                 required=False,
             ),
             *args,
+            title="Bug Report",
             **kwargs
         )
 
@@ -54,7 +55,7 @@ class BugReportModal(discord.ui.Modal):
 
         await interaction.response.send_message(embed=embeds.GreenEmbed(
             title="Bug Reported",
-            description=f"My developer has been notified of the bug!"
+            description=f"My developers have been notified of the bug!"
         ), ephemeral=True)
 
 
@@ -70,12 +71,13 @@ class FeatureRequestModal(discord.ui.Modal):
                 max_length=2000,
             ),
             discord.ui.InputText(
-                label="Bug Description:",
+                label="Feature Description:",
                 placeholder="Please enter a description of the feature...",
                 style=discord.InputTextStyle.long,
                 max_length=2000,
             ),
             *args,
+            title="Feature Request",
             **kwargs
         )
 
@@ -100,7 +102,7 @@ class FeatureRequestModal(discord.ui.Modal):
 
         await interaction.response.send_message(embed=embeds.GreenEmbed(
             title="Feature Requested",
-            description=f"My developer has been notified of the feature request!"
+            description=f"My developers have been notified of the feature request!"
         ), ephemeral=True)
 
 

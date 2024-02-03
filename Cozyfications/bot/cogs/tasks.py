@@ -27,13 +27,15 @@ class Tasks(core.Cog):
         live_channels: list[Type[database.TwitchChannel]] = await database.get_all_live_channels()
         for twitch_channel in live_channels:
             subscribed_guilds = await database.get_subscribed_guilds(broadcaster_id=twitch_channel.id)
+            stream: twitch.LiveStream | twitch.OfflineStream = await twitch.get_channel(
+                broadcaster_id=twitch_channel.id
+            )
+            if not stream.live:
+                continue
             for guild in subscribed_guilds:
                 channel = await utils.get_or_fetch(obj=self.bot, attr='channel', id=guild.channel_id, default=None)
                 message = await channel.fetch_message(guild.message_id)
-                live_stream: twitch.LiveStream | twitch.OfflineStream = await twitch.get_channel(
-                    broadcaster_id=twitch_channel.id
-                )
-                live_embed: core.LiveStreamEmbed = core.LiveStreamEmbed(bot=self.bot, stream=live_stream)
+                live_embed: core.LiveStreamEmbed = core.LiveStreamEmbed(bot=self.bot, stream=stream)
 
                 embeds: list[discord.Embed] = core.create_embeds_list(
                     message=message,
