@@ -64,7 +64,7 @@ class Settings(core.Cog):
             ), ephemeral=True)
             return
 
-        database.set_guild(guild_id=ctx.guild.id, channel_id=channel.id, message_id=message_id)
+        await database.set_guild(guild_id=ctx.guild.id, channel_id=channel.id, message_id=message_id)
 
         success_embed: core.GreenEmbed = core.GreenEmbed(
             title="Success!",
@@ -110,7 +110,7 @@ class Settings(core.Cog):
         await ctx.defer(ephemeral=True)
 
         try:
-            guild: database.Guild = database.get_guild(guild_id=ctx.guild.id)
+            guild: database.Guild = await database.get_guild(guild_id=ctx.guild.id)
         except errors.GuildNotFoundInDatabase:
             setup_command = self.bot.get_application_command("setup")
             await ctx.followup.send(embed=core.RedEmbed(
@@ -120,7 +120,7 @@ class Settings(core.Cog):
             ), ephemeral=True)
             return
 
-        if len(database.get_subscribed_channels(guild_id=ctx.guild_id)) >= 10:
+        if len(await database.get_subscribed_channels(guild_id=ctx.guild_id)) >= 10:
             await ctx.followup.send(embed=core.RedEmbed(
                 title="Error",
                 description="You can only subscribe to 10 Twitch channels per server!"
@@ -141,15 +141,15 @@ class Settings(core.Cog):
         )
 
         try:
-            database.add_subscription(guild_id=ctx.guild.id, broadcaster_id=broadcaster_id)
+            await database.add_subscription(guild_id=ctx.guild.id, broadcaster_id=broadcaster_id)
         except errors.TwitchChannelNotFoundInDatabase:
-            database.set_twitch_channel(
+            await database.set_twitch_channel(
                 broadcaster_id=broadcaster_id,
                 streamer=twitch_channel.streamer,
                 live=twitch_channel.live,
                 stream_title=twitch_channel.title
             )
-            database.add_subscription(guild_id=ctx.guild.id, broadcaster_id=broadcaster_id)
+            await database.add_subscription(guild_id=ctx.guild.id, broadcaster_id=broadcaster_id)
         except errors.DuplicateSubscription:
             await ctx.followup.send(embed=core.RedEmbed(
                 title="Error",
@@ -214,7 +214,7 @@ class Settings(core.Cog):
         )
 
         try:
-            database.remove_subscription(guild_id=ctx.guild.id, broadcaster_id=broadcaster_id)
+            await database.remove_subscription(guild_id=ctx.guild.id, broadcaster_id=broadcaster_id)
 
         except errors.GuildNotFoundInDatabase:
             setup_command = self.bot.get_application_command("setup")
@@ -232,7 +232,7 @@ class Settings(core.Cog):
             ), ephemeral=True)
             return
 
-        guild = database.get_guild(guild_id=ctx.guild.id)
+        guild = await database.get_guild(guild_id=ctx.guild.id)
         try:
             channel: discord.TextChannel = await utils.get_or_fetch(
                 obj=self.bot,
@@ -247,7 +247,7 @@ class Settings(core.Cog):
             ), ephemeral=True)
             return
 
-        if len(database.get_subscribed_channels(guild_id=guild.id)) == 0:
+        if len(await database.get_subscribed_channels(guild_id=guild.id)) == 0:
             await message.edit(embed=core.CozyficationsEmbed(
                 title="Live Stream Notifications",
                 description="This message will be edited when a stream goes live!",
@@ -271,7 +271,7 @@ class Settings(core.Cog):
         guild: discord.Guild
             The guild that the bot left."""
         try:
-            database.delete_guild(guild_id=guild.id)
+            await database.delete_guild(guild_id=guild.id)
         except errors.GuildNotFoundInDatabase:
             pass
 

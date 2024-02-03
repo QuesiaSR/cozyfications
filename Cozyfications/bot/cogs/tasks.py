@@ -24,9 +24,9 @@ class Tasks(core.Cog):
     @tasks.loop(minutes=5)
     async def update_live_channels(self):
         """Updates the embeds of live Twitch channels in subscribed guilds every 5 minutes."""
-        live_channels: list[Type[database.TwitchChannel]] = database.get_all_live_channels()
+        live_channels: list[Type[database.TwitchChannel]] = await database.get_all_live_channels()
         for twitch_channel in live_channels:
-            subscribed_guilds = database.get_subscribed_guilds(broadcaster_id=twitch_channel.id)
+            subscribed_guilds = await database.get_subscribed_guilds(broadcaster_id=twitch_channel.id)
             for guild in subscribed_guilds:
                 channel = await utils.get_or_fetch(obj=self.bot, attr='channel', id=guild.channel_id, default=None)
                 message = await channel.fetch_message(guild.message_id)
@@ -46,9 +46,9 @@ class Tasks(core.Cog):
     async def before_update_live_channels(self):
         """Waits for the bot to be ready before starting the update_live_channels task."""
         await self.bot.wait_until_ready()
-        channels: list[Type[database.TwitchChannel]] = database.get_all_channels()
+        channels: list[Type[database.TwitchChannel]] = await database.get_all_channels()
         for twitch_channel in channels:
-            subscribed_guilds = database.get_subscribed_guilds(broadcaster_id=twitch_channel.id)
+            subscribed_guilds = await database.get_subscribed_guilds(broadcaster_id=twitch_channel.id)
             stream: twitch.LiveStream | twitch.OfflineStream = await twitch.get_channel(
                 broadcaster_id=twitch_channel.id
             )

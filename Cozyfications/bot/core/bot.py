@@ -45,7 +45,7 @@ class Cozyfications(discord.Bot):
             print("".join(traceback.format_exception(type(e), e, e.__traceback__)))
 
     async def on_connect(self):
-        database.setup()
+        await database.setup()
         await twitch.update_channels()
         await super().on_connect()
 

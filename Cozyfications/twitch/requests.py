@@ -59,7 +59,7 @@ async def get_channel(*, broadcaster_id: int) -> LiveStream | OfflineStream:
             )
         else:
             try:
-                title = database.get_twitch_channel(broadcaster_id=broadcaster_id).stream_title
+                title = (await database.get_twitch_channel(broadcaster_id=broadcaster_id)).stream_title
             except errors.TwitchChannelNotFoundInDatabase:
                 title = "No title available."
             twitch_channel = OfflineStream(
@@ -97,18 +97,18 @@ async def get_channels_autocomplete(ctx: discord.AutocompleteContext) -> list[st
 async def update_channels() -> None:
     """Updates the Twitch channels in the database."""
     async with await Twitch() as twitch:
-        twitch_channels: list[Type[TwitchChannel]] = database.get_all_channels()
+        twitch_channels: list[Type[TwitchChannel]] = await database.get_all_channels()
         for twitch_channel in twitch_channels:
             stream: Stream = await helper.first(twitch.get_streams(user_id=str(twitch_channel.id)))
             if stream:
-                database.set_twitch_channel(
+                await database.set_twitch_channel(
                     broadcaster_id=twitch_channel.id,
                     streamer=twitch_channel.streamer,
                     live=True,
                     stream_title=stream.title
                 )
             else:
-                database.set_twitch_channel(
+                await database.set_twitch_channel(
                     broadcaster_id=twitch_channel.id,
                     streamer=twitch_channel.streamer,
                     live=False,
@@ -116,7 +116,7 @@ async def update_channels() -> None:
                 )
 
 
-def add_subscription(*, broadcaster_id: int) -> None:
+async def add_subscription(*, broadcaster_id: int) -> None:
     """Adds an event subscription to a Twitch channel.
 
     Parameters
@@ -127,7 +127,7 @@ def add_subscription(*, broadcaster_id: int) -> None:
     pass
 
 
-def remove_subscription(*, broadcaster_id: int) -> None:
+async def remove_subscription(*, broadcaster_id: int) -> None:
     """Removes an event subscription from a Twitch channel.
 
     Parameters

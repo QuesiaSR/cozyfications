@@ -10,8 +10,6 @@ __all__ = (
     "TwitchChannel"
 )
 
-# TODO: Make DB async
-
 
 class Base(sqlalchemy.orm.DeclarativeBase):
     """Base class for SQLAlchemy models."""

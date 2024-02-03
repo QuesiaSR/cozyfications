@@ -1,14 +1,15 @@
 from typing import Type
 
 import discord
-from sqlalchemy.orm import Session
+from sqlalchemy import select
+from sqlalchemy.orm import joinedload
 
 from Cozyfications import errors, twitch
-from Cozyfications.database.engine import engine
+from Cozyfications.database.setup import async_session
 from Cozyfications.database.models import Guild, TwitchChannel
 
 
-def get_guild(*, guild_id: int) -> Guild:
+async def get_guild(*, guild_id: int) -> Guild:
     """Returns the guild from the database.
 
     Parameters
@@ -20,14 +21,14 @@ def get_guild(*, guild_id: int) -> Guild:
     ----------
     Guild
         The guild from the database."""
-    with Session(bind=engine) as session:
-        guild: Guild | None = session.query(Guild).filter_by(id=guild_id).first()
+    async with async_session() as session:
+        guild = (await session.execute(select(Guild).filter(Guild.id == guild_id))).scalar_one_or_none()
         if not guild:
             raise errors.GuildNotFoundInDatabase(guild_id=guild_id)
         return guild
 
 
-def set_guild(*, guild_id: int, channel_id: int, message_id: int) -> None:
+async def set_guild(*, guild_id: int, channel_id: int, message_id: int) -> None:
     """Sets the channel ID and message ID of the guild.
 
     Parameters
@@ -38,32 +39,32 @@ def set_guild(*, guild_id: int, channel_id: int, message_id: int) -> None:
         The ID of the channel.
     message_id: int
         The ID of the message."""
-    with Session(bind=engine) as session:
-        if session.query(Guild).filter_by(id=guild_id).first():
-            session.query(Guild).filter_by(id=guild_id).update({
-                Guild.channel_id: channel_id,
-                Guild.message_id: message_id
-            })
+    async with async_session() as session:
+        guild = (await session.execute(select(Guild).filter(Guild.id == guild_id))).scalar_one_or_none()
+        if guild:
+            guild.channel_id = channel_id
+            guild.message_id = message_id
         else:
             session.add(Guild(id=guild_id, channel_id=channel_id, message_id=message_id))
-        session.commit()
+        await session.commit()
 
 
-def delete_guild(*, guild_id: int) -> None:
+async def delete_guild(*, guild_id: int) -> None:
     """Deletes the guild from the database.
 
     Parameters
     ----------
     guild_id: int
         The ID of the guild."""
-    with Session(bind=engine) as session:
-        if not session.query(Guild).filter_by(id=guild_id).first():
+    async with async_session() as session:
+        guild = (await session.execute(select(Guild).filter(Guild.id == guild_id))).scalar_one_or_none()
+        if not guild:
             raise errors.GuildNotFoundInDatabase(guild_id=guild_id)
-        session.query(Guild).filter_by(id=guild_id).delete()
-        session.commit()
+        await session.delete(guild)
+        await session.commit()
 
 
-def get_twitch_channel(*, broadcaster_id: int) -> TwitchChannel:
+async def get_twitch_channel(*, broadcaster_id: int) -> TwitchChannel:
     """Returns the Twitch channel from the database.
 
     Parameters
@@ -75,14 +76,16 @@ def get_twitch_channel(*, broadcaster_id: int) -> TwitchChannel:
     ----------
     TwitchChannel
         The Twitch channel from the database."""
-    with Session(bind=engine) as session:
-        twitch_channel: TwitchChannel | None = session.query(TwitchChannel).filter_by(id=broadcaster_id).first()
+    async with async_session() as session:
+        twitch_channel = (
+            await session.execute(select(TwitchChannel).filter(TwitchChannel.id == broadcaster_id))
+        ).scalar_one_or_none()
         if not twitch_channel:
             raise errors.TwitchChannelNotFoundInDatabase(broadcaster_id=broadcaster_id)
         return twitch_channel
 
 
-def set_twitch_channel(*, broadcaster_id: int, streamer: str, live: bool, stream_title: str) -> None:
+async def set_twitch_channel(*, broadcaster_id: int, streamer: str, live: bool, stream_title: str) -> None:
     """Sets the Twitch channel's live status and stream title.
 
     Parameters
@@ -95,35 +98,39 @@ def set_twitch_channel(*, broadcaster_id: int, streamer: str, live: bool, stream
         The Twitch channel's live status.
     stream_title: str
         The Twitch channel's stream title."""
-    with Session(bind=engine) as session:
-        if session.query(TwitchChannel).filter_by(id=broadcaster_id).first():
-            session.query(TwitchChannel).filter_by(id=broadcaster_id).update({
-                TwitchChannel.streamer: streamer,
-                TwitchChannel.live: live,
-                TwitchChannel.stream_title: stream_title
-            })
+    async with async_session() as session:
+        twitch_channel = (
+            await session.execute(select(TwitchChannel).filter(TwitchChannel.id == broadcaster_id))
+        ).scalar_one_or_none()
+        if twitch_channel:
+            twitch_channel.streamer = streamer
+            twitch_channel.live = live
+            twitch_channel.stream_title = stream_title
         else:
             session.add(TwitchChannel(id=broadcaster_id, streamer=streamer, live=live, stream_title=stream_title))
-            twitch.add_subscription(broadcaster_id=broadcaster_id)
-        session.commit()
+            await twitch.add_subscription(broadcaster_id=broadcaster_id)
+        await session.commit()
 
 
-def delete_twitch_channel(*, broadcaster_id: int) -> None:
+async def delete_twitch_channel(*, broadcaster_id: int) -> None:
     """Deletes the Twitch channel from the database.
 
     Parameters
     ----------
     broadcaster_id: int
         The ID of the Twitch channel."""
-    with Session(bind=engine) as session:
-        if not session.query(TwitchChannel).filter_by(id=broadcaster_id).first():
+    async with async_session() as session:
+        twitch_channel = (
+            await session.execute(select(TwitchChannel).filter(TwitchChannel.id == broadcaster_id))
+        ).scalar_one_or_none()
+        if not twitch_channel:
             raise errors.TwitchChannelNotFoundInDatabase(broadcaster_id=broadcaster_id)
-        session.query(TwitchChannel).filter_by(id=broadcaster_id).delete()
-        twitch.remove_subscription(broadcaster_id=broadcaster_id)
-        session.commit()
+        await session.delete(twitch_channel)
+        await twitch.remove_subscription(broadcaster_id=broadcaster_id)
+        await session.commit()
 
 
-def add_subscription(*, guild_id: int, broadcaster_id: int) -> None:
+async def add_subscription(*, guild_id: int, broadcaster_id: int) -> None:
     """Adds a Twitch channel subscription to the database.
 
     Parameters
@@ -132,20 +139,24 @@ def add_subscription(*, guild_id: int, broadcaster_id: int) -> None:
         The ID of the guild.
     broadcaster_id: int
         The ID of the Twitch channel."""
-    with Session(bind=engine) as session:
-        guild: Guild | None = session.query(Guild).filter_by(id=guild_id).first()
+    async with async_session() as session:
+        guild = (await session.execute(select(Guild).options(
+            joinedload(Guild.subscribed_channels)
+        ).filter(Guild.id == guild_id))).unique().scalar_one_or_none()
         if not guild:
             raise errors.GuildNotFoundInDatabase(guild_id=guild_id)
-        twitch_channel = session.query(TwitchChannel).filter_by(id=broadcaster_id).first()
+        twitch_channel = (
+            await session.execute(select(TwitchChannel).filter(TwitchChannel.id == broadcaster_id))
+        ).scalar_one_or_none()
         if not twitch_channel:
             raise errors.TwitchChannelNotFoundInDatabase(broadcaster_id=broadcaster_id)
         if twitch_channel in guild.subscribed_channels:
             raise errors.DuplicateSubscription(guild_id=guild_id, broadcaster_id=broadcaster_id)
         guild.subscribed_channels.append(twitch_channel)
-        session.commit()
+        await session.commit()
 
 
-def remove_subscription(*, guild_id: int, broadcaster_id: int) -> None:
+async def remove_subscription(*, guild_id: int, broadcaster_id: int) -> None:
     """Removes a Twitch channel subscription from the database.
 
     Parameters
@@ -154,47 +165,55 @@ def remove_subscription(*, guild_id: int, broadcaster_id: int) -> None:
         The ID of the guild.
     broadcaster_id: int
         The ID of the Twitch channel."""
-    with Session(bind=engine) as session:
-        guild: Guild | None = session.query(Guild).filter_by(id=guild_id).first()
+    async with async_session() as session:
+        guild = (await session.execute(select(Guild).options(
+            joinedload(Guild.subscribed_channels)
+        ).filter(Guild.id == guild_id))).unique().scalar_one_or_none()
         if not guild:
             raise errors.GuildNotFoundInDatabase(guild_id=guild_id)
-        twitch_channel = session.query(TwitchChannel).filter_by(id=broadcaster_id).first()
+        twitch_channel = (
+            await session.execute(select(TwitchChannel).filter(TwitchChannel.id == broadcaster_id))
+        ).scalar_one_or_none()
         if not twitch_channel:
             raise errors.TwitchChannelNotFoundInDatabase(broadcaster_id=broadcaster_id)
         if twitch_channel not in guild.subscribed_channels:
             raise errors.SubscriptionNotFound(guild_id=guild_id, broadcaster_id=broadcaster_id)
         guild.subscribed_channels.remove(twitch_channel)
-        subscribed_guilds = session.query(Guild).filter(Guild.subscribed_channels.any(id=broadcaster_id)).all()
+        subscribed_guilds = (
+            await session.execute(select(Guild).filter(Guild.subscribed_channels.any(id=broadcaster_id)))
+        ).scalars().all()
         if len(subscribed_guilds) == 0:
-            session.query(TwitchChannel).filter_by(id=broadcaster_id).delete()
-        session.commit()
+            await session.delete(twitch_channel)
+        await session.commit()
 
 
-def get_all_channels() -> list[Type[TwitchChannel]]:
+async def get_all_channels() -> list[Type[TwitchChannel]]:
     """Returns a list of all Twitch channels.
 
     Returns
     ----------
     list[Type[TwitchChannel]]
         A list of Twitch channels."""
-    with Session(bind=engine) as session:
-        channels: list[Type[TwitchChannel]] = session.query(TwitchChannel).all()
+    async with async_session() as session:
+        channels: list[Type[TwitchChannel]] = (await session.execute(select(TwitchChannel))).scalars().all()
         return channels
 
 
-def get_all_live_channels() -> list[Type[TwitchChannel]]:
+async def get_all_live_channels() -> list[Type[TwitchChannel]]:
     """Returns a list of Twitch channels that are live.
 
     Returns
     ----------
     list[Type[TwitchChannel]]
         A list of Twitch channels that are live."""
-    with Session(bind=engine) as session:
-        live_channels: list[Type[TwitchChannel]] = session.query(TwitchChannel).filter_by(live=True).all()
+    async with async_session() as session:
+        live_channels: list[Type[TwitchChannel]] = (
+            await session.execute(select(TwitchChannel).filter(TwitchChannel.live))
+        ).scalars().all()
         return live_channels
 
 
-def get_subscribed_guilds(*, broadcaster_id) -> list[Type[Guild]]:
+async def get_subscribed_guilds(*, broadcaster_id) -> list[Type[Guild]]:
     """Returns a list of guilds that have subscribed to a Twitch channel.
 
     Parameters
@@ -206,12 +225,14 @@ def get_subscribed_guilds(*, broadcaster_id) -> list[Type[Guild]]:
     ----------
     list[Type[Guild]] | None
         A list of guilds that have subscribed to a Twitch channel."""
-    with Session(bind=engine) as session:
-        guilds: list[Type[Guild]] = session.query(Guild).filter(Guild.subscribed_channels.any(id=broadcaster_id)).all()
+    async with async_session() as session:
+        guilds: list[Type[Guild]] = (
+            await session.execute(select(Guild).filter(Guild.subscribed_channels.any(id=broadcaster_id)))
+        ).scalars().all()
         return guilds
 
 
-def get_subscribed_channels(*, guild_id: int) -> list[Type[TwitchChannel]]:
+async def get_subscribed_channels(*, guild_id: int) -> list[Type[TwitchChannel]]:
     """Returns a list of Twitch channels that a guild has subscribed to.
 
     Parameters
@@ -223,8 +244,10 @@ def get_subscribed_channels(*, guild_id: int) -> list[Type[TwitchChannel]]:
     ----------
     list[Type[TwitchChannel]] | None
         A list of Twitch channels that a guild has subscribed to."""
-    with Session(bind=engine) as session:
-        guild: Guild | None = session.query(Guild).filter_by(id=guild_id).first()
+    async with async_session() as session:
+        guild: Guild | None = (await session.execute(select(Guild).options(
+            joinedload(Guild.subscribed_channels)
+        ).filter(Guild.id == guild_id))).unique().scalar_one_or_none()
         if not guild:
             raise errors.GuildNotFoundInDatabase(guild_id=guild_id)
         channels: list[Type[TwitchChannel]] = guild.subscribed_channels
@@ -232,7 +255,7 @@ def get_subscribed_channels(*, guild_id: int) -> list[Type[TwitchChannel]]:
 
 
 # TODO: Use cache to reduce database calls.
-def get_subscribed_channels_autocomplete(ctx: discord.AutocompleteContext) -> list[str]:
+async def get_subscribed_channels_autocomplete(ctx: discord.AutocompleteContext) -> list[str]:
     """Returns the Twitch channels matching the ctx requests.
 
     Parameters
@@ -244,8 +267,10 @@ def get_subscribed_channels_autocomplete(ctx: discord.AutocompleteContext) -> li
     ----------
     list[str]
         The Twitch channels matching the ctx requests."""
-    with (Session(bind=engine) as session):
-        guild: Guild | None = session.query(Guild).filter_by(id=ctx.interaction.guild_id).first()
+    async with async_session() as session:
+        guild: Guild | None = (await session.execute(select(Guild).options(
+            joinedload(Guild.subscribed_channels)
+        ).filter(Guild.id == ctx.interaction.guild_id))).unique().scalar_one_or_none()
         if not guild:
             return []
         channels: list[str] = [channel.streamer for channel in guild.subscribed_channels]
