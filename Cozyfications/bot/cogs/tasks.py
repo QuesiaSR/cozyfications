@@ -20,9 +20,9 @@ class Tasks(core.Cog):
         """Cancels all background tasks."""
         self.update_channels.cancel()
 
-    @tasks.loop(minutes=3)
+    @tasks.loop(minutes=5)
     async def update_channels(self):
-        """Updates the embeds of Twitch channels in subscribed guilds every 3 minutes."""
+        """Updates the embeds of Twitch channels in subscribed guilds every 5 minutes."""
         channels: list[Type[database.TwitchChannel]] = await database.get_twitch_channels()
         for twitch_channel in channels:
             await notify_guilds(twitch_channel=twitch_channel, bot=self.bot)
