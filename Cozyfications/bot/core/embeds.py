@@ -306,16 +306,16 @@ class LiveStreamEmbed(CozyficationsEmbed):
         stream: :class:`LiveStream`
             The live stream instance.
         **kwargs: Any"""
+        timestamp: float = datetime.datetime.utcnow().timestamp()
         super().__init__(bot=bot, **kwargs)
         self.title: str = f"{stream.streamer} is LIVE!"
         self.url: str = stream.url
-        self.set_thumbnail(url=stream.profile_picture)
-        self.set_image(url=f"{stream.thumbnail}?t={datetime.datetime.utcnow().timestamp()}")
+        self.set_thumbnail(url=f"{stream.profile_picture}?t={timestamp}")
+        self.set_image(url=f"{stream.thumbnail}?t={timestamp}")
         self.add_field(name="Stream Title:", value=stream.title, inline=False)
         self.add_field(name="Game:", value=stream.game, inline=True)
         self.add_field(name="Viewers:", value=str(stream.viewers), inline=True)
-        self.add_field(name="Live Since:", value=discord.utils.format_dt(stream.started_at, style="R"),
-                       inline=True)
+        self.add_field(name="Live Since:", value=discord.utils.format_dt(stream.started_at, style="R"), inline=True)
 
 
 class OfflineStreamEmbed(CozyficationsEmbed):
@@ -331,11 +331,12 @@ class OfflineStreamEmbed(CozyficationsEmbed):
         stream: :class:`OfflineStream`
             The offline stream instance.
         **kwargs: Any"""
+        timestamp: float = datetime.datetime.utcnow().timestamp()
         super().__init__(bot=bot, **kwargs)
         self.title: str = f"{stream.streamer} is OFFLINE!"
         self.url: str = stream.url
         self.add_field(name="Last Stream Title:", value=stream.title, inline=False)
-        self.set_thumbnail(url=stream.profile_picture)
+        self.set_thumbnail(url=f"{stream.profile_picture}?t={timestamp}")
 
 
 class InvalidMessageIDEmbed(RedEmbed):
