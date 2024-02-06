@@ -20,8 +20,7 @@ class Cozyfications(discord.Bot):
                 members=True,
                 messages=True
             ),
-            owner_ids=[810863994985250836, 672768917885681678],
-            debug_guilds=[1018128160962904114]
+            owner_ids=[810863994985250836, 672768917885681678]
         )
 
         self.on_ready_fired: bool = False
