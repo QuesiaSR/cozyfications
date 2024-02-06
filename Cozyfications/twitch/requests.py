@@ -97,7 +97,7 @@ async def get_channels_autocomplete(ctx: discord.AutocompleteContext) -> list[st
 async def update_channels() -> None:
     """Updates the Twitch channels in the database."""
     async with await Twitch() as twitch:
-        twitch_channels: list[Type[TwitchChannel]] = await database.get_all_channels()
+        twitch_channels: list[Type[TwitchChannel]] = await database.get_twitch_channels()
         for twitch_channel in twitch_channels:
             stream: Stream = await helper.first(twitch.get_streams(user_id=str(twitch_channel.id)))
             if stream:

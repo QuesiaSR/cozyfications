@@ -12,10 +12,9 @@ __all__ = (
     "get_twitch_channel",
     "set_twitch_channel",
     "delete_twitch_channel",
+    "get_twitch_channels",
     "add_subscription",
     "remove_subscription",
-    "get_all_channels",
-    "get_all_live_channels",
     "get_subscribed_guilds",
     "get_subscribed_channels",
     "get_subscribed_channels_autocomplete"

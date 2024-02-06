@@ -61,7 +61,8 @@ class Cozyfications(discord.Bot):
             return
         self.on_ready_fired = True
 
-        self.errors_webhook: discord.Webhook = self.get_errors_webhook()
+        if not self.errors_webhook:
+            self.errors_webhook: discord.Webhook = self.get_errors_webhook()
 
         msg: str = f"""{self.user.name} is online now!
             BotID: {self.user.id}
@@ -91,11 +92,14 @@ class Cozyfications(discord.Bot):
             color=discord.Color.yellow(),
             timestamp=discord.utils.utcnow()
         ), ephemeral=True)
+
         if ctx.guild is not None:
             guild = f"`{ctx.guild.name} ({ctx.guild_id})`"
         else:
             guild = "None (DMs)"
+
         formatted_error = ''.join(traceback.format_exception(type(error), error, error.__traceback__))
+
         error_embed = discord.Embed(
             title=error.__class__.__name__,
             description=str(error),
@@ -110,6 +114,7 @@ class Cozyfications(discord.Bot):
                 value=f"```py\n{formatted_error[i:i + 1015]}```",
                 inline=False
             )
+
         return await self.errors_webhook.send(
             embed=error_embed,
             avatar_url=self.user.display_avatar.url
@@ -118,6 +123,7 @@ class Cozyfications(discord.Bot):
     async def on_error(self, event: str, *args, **kwargs):
         _, error, error_traceback = sys.exc_info()
         formatted_error = ''.join(traceback.format_exception(type(error), error, error_traceback))
+
         error_embed = discord.Embed(
             title=error.__class__.__name__,
             description=str(error),
@@ -132,6 +138,9 @@ class Cozyfications(discord.Bot):
                 value=f"```py\n{formatted_error[i:i + 1015]}```",
                 inline=False
             )
+
+        if not self.errors_webhook:
+            self.errors_webhook: discord.Webhook = self.get_errors_webhook()
         return await self.errors_webhook.send(
             embed=error_embed,
             avatar_url=self.user.display_avatar.url

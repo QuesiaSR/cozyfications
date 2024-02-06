@@ -130,6 +130,18 @@ async def delete_twitch_channel(*, broadcaster_id: int) -> None:
         await session.commit()
 
 
+async def get_twitch_channels() -> list[Type[TwitchChannel]]:
+    """Returns a list of all Twitch channels.
+
+    Returns
+    ----------
+    list[Type[TwitchChannel]]
+        A list of Twitch channels."""
+    async with async_session() as session:
+        channels: list[Type[TwitchChannel]] = (await session.execute(select(TwitchChannel))).scalars().all()
+        return channels
+
+
 async def add_subscription(*, guild_id: int, broadcaster_id: int) -> None:
     """Adds a Twitch channel subscription to the database.
 
@@ -185,32 +197,6 @@ async def remove_subscription(*, guild_id: int, broadcaster_id: int) -> None:
         if len(subscribed_guilds) == 0:
             await session.delete(twitch_channel)
         await session.commit()
-
-
-async def get_all_channels() -> list[Type[TwitchChannel]]:
-    """Returns a list of all Twitch channels.
-
-    Returns
-    ----------
-    list[Type[TwitchChannel]]
-        A list of Twitch channels."""
-    async with async_session() as session:
-        channels: list[Type[TwitchChannel]] = (await session.execute(select(TwitchChannel))).scalars().all()
-        return channels
-
-
-async def get_all_live_channels() -> list[Type[TwitchChannel]]:
-    """Returns a list of Twitch channels that are live.
-
-    Returns
-    ----------
-    list[Type[TwitchChannel]]
-        A list of Twitch channels that are live."""
-    async with async_session() as session:
-        live_channels: list[Type[TwitchChannel]] = (
-            await session.execute(select(TwitchChannel).filter(TwitchChannel.live))
-        ).scalars().all()
-        return live_channels
 
 
 async def get_subscribed_guilds(*, broadcaster_id) -> list[Type[Guild]]:
