@@ -23,6 +23,7 @@ class Tasks(core.Cog):
     @tasks.loop(minutes=5)
     async def update_channels(self):
         """Updates the embeds of Twitch channels in subscribed guilds every 5 minutes."""
+        await twitch.update_channels()
         channels: list[Type[database.TwitchChannel]] = await database.get_twitch_channels()
         for twitch_channel in channels:
             await notify_guilds(twitch_channel=twitch_channel, bot=self.bot)
