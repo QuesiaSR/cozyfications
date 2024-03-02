@@ -1,5 +1,6 @@
-import dotenv
 import os
+
+import dotenv
 
 dotenv.load_dotenv()
 
@@ -8,6 +9,7 @@ class Discord:
     ID = os.getenv("DISCORD_ID")
     SECRET = os.getenv("DISCORD_SECRET")
     TOKEN = os.getenv("DISCORD_TOKEN")
+    ERRORS_WEBHOOK = os.getenv("DISCORD_ERRORS_WEBHOOK")
 
 
 class Twitch:
